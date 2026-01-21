@@ -1,3 +1,5 @@
+// js/engine.js
+
 import m01 from "./modules/m01.js";
 import placeholder from "./modules/placeholder.js";
 import m02 from "./modules/m02.js";
@@ -5,8 +7,8 @@ import m02 from "./modules/m02.js";
 const DEV_UI = true; // v ostré verzi false
 
 const ALL_MODULES = [
-  { id: "m01", fn: m01 },             // vždy první
-  { id: "ph001", fn: placeholder },   // další náhodně (neopakují se)
+  { id: "m01", fn: m01 }, // vždy první
+  { id: "ph001", fn: placeholder }, // další náhodně (neopakují se)
   { id: "m02", fn: m02 },
 ];
 
@@ -28,8 +30,8 @@ export function startLaborator() {
 
   app.innerHTML = "";
 
-  // Color controller (globální stav barev)
-  const colors = createColorsController();
+  // Color controller (globální stav barev) — teď s plynulou animací CSS vars
+  const colors = createColorsController({ duration: 500 });
 
   // Dev reset button (globální)
   if (DEV_UI) {
@@ -102,13 +104,13 @@ function getOrCreateOrder(all) {
 
   if (Array.isArray(stored) && stored.length) {
     // validace: všechny existují v ALL_MODULES
-    const validIds = new Set(all.map(m => m.id));
-    const ok = stored.every(id => validIds.has(id));
+    const validIds = new Set(all.map((m) => m.id));
+    const ok = stored.every((id) => validIds.has(id));
 
     // navíc: m01 musí být první (nebo obecně all[0])
     if (ok && stored[0] === all[0].id) {
       // mapni na {id, fn}
-      return stored.map(id => all.find(m => m.id === id));
+      return stored.map((id) => all.find((m) => m.id === id));
     }
   }
 
@@ -118,7 +120,7 @@ function getOrCreateOrder(all) {
   shuffleInPlace(rest);
   const newOrder = [first, ...rest];
 
-  localStorage.setItem(LS_ORDER, JSON.stringify(newOrder.map(m => m.id)));
+  localStorage.setItem(LS_ORDER, JSON.stringify(newOrder.map((m) => m.id)));
   localStorage.setItem(LS_INDEX, "0");
 
   return newOrder;
@@ -142,7 +144,11 @@ function resetProgress() {
 }
 
 function safeParseJSON(s) {
-  try { return JSON.parse(s); } catch { return null; }
+  try {
+    return JSON.parse(s);
+  } catch {
+    return null;
+  }
 }
 
 function shuffleInPlace(arr) {
@@ -185,10 +191,12 @@ function renderModule(app, mod, { onComplete, devCompleteEnabled, colors } = {})
 }
 
 /* =======================
-   COLOR CONTROLLER
+   COLOR CONTROLLER (plynulá rotace)
+   - animuje změny přes CSS vars (pro celý projekt: pozadí, tečky, patterny, atd.)
+   - persistuje finální stav po doběhnutí animace
    ======================= */
 
-function createColorsController() {
+function createColorsController({ duration = 500 } = {}) {
   // 1) načti z LS, nebo default
   const stored = safeParseJSON(localStorage.getItem(LS_COLORS));
   let state = normalizeColors(stored) || { ...DEFAULT_COLORS };
@@ -196,60 +204,143 @@ function createColorsController() {
   // 2) aplikuj do CSS hned při startu
   applyColorsToCss(state);
 
-  // 3) API
+  // 3) animace interně
+  let raf = null;
+  let animStart = 0;
+  let animDur = duration;
+  let fromRGB = null;
+  let toRGB = null;
+  let pendingPersist = false;
+
   const api = {
     get() {
       return { ...state };
     },
 
-    set(next = {}) {
-      state = normalizeColors({ ...state, ...next }) || { ...DEFAULT_COLORS };
-      applyColorsToCss(state);
-      persist();
+    // set(next, { duration, animate })
+    set(next = {}, opts = {}) {
+      const nextState = normalizeColors({ ...state, ...next }) || { ...DEFAULT_COLORS };
+
+      const dur = typeof opts.duration === "number" ? opts.duration : duration;
+      const animate = opts.animate !== false && dur > 0;
+
+      if (!animate) {
+        cancelAnim();
+        state = nextState;
+        applyColorsToCss(state);
+        persist();
+        return api.get();
+      }
+
+      // animuj z aktuálně spočtených CSS vars (aby to sedělo i během běžící animace)
+      const cssNow = readCssVars();
+      const from = normalizeColors(cssNow) || state;
+
+      startAnim(from, nextState, dur);
+      state = nextState; // cíl je nová "pravda", ale persist až na konci
       return api.get();
     },
 
-    reset() {
-      state = { ...DEFAULT_COLORS };
-      applyColorsToCss(state);
-      persist();
-      return api.get();
+    reset(opts = {}) {
+      return api.set({ ...DEFAULT_COLORS }, opts);
     },
 
-    randomize({ primary = false, secondary = false, tertiary = false } = {}) {
+    randomize({ primary = false, secondary = false, tertiary = false } = {}, opts = {}) {
       const next = { ...state };
       if (primary) next.primary = randomHex();
       if (secondary) next.secondary = randomHex();
       if (tertiary) next.tertiary = randomHex();
-      return api.set(next);
+      return api.set(next, opts);
     },
 
-    // rotate(1): primary→secondary→tertiary→primary
-    // prakticky: [p,s,t] -> [t,p,s]
-    rotate(steps = 1) {
+    // rotate(1): [p,s,t] -> [t,p,s]
+    rotate(steps = 1, opts = {}) {
       let s = steps | 0;
       if (s === 0) return api.get();
-
-      // normalizace na rozsah 0..2
       s = ((s % 3) + 3) % 3;
+
+      let next = { ...state };
 
       if (s === 1) {
         const { primary: p, secondary: sec, tertiary: t } = state;
-        return api.set({ primary: t, secondary: p, tertiary: sec });
-      }
-
-      if (s === 2) {
-        // rotace o 2 je totéž jako -1
+        next = { primary: t, secondary: p, tertiary: sec };
+      } else if (s === 2) {
         const { primary: p, secondary: sec, tertiary: t } = state;
-        return api.set({ primary: sec, secondary: t, tertiary: p });
+        next = { primary: sec, secondary: t, tertiary: p };
       }
 
-      return api.get();
+      // defaultně chceme 500ms (nebo duration z controlleru)
+      return api.set(next, opts);
     },
   };
 
   function persist() {
     localStorage.setItem(LS_COLORS, JSON.stringify(state));
+  }
+
+  function cancelAnim() {
+    if (raf != null) {
+      cancelAnimationFrame(raf);
+      raf = null;
+    }
+    pendingPersist = false;
+  }
+
+  function startAnim(from, to, dur) {
+    cancelAnim();
+
+    animStart = performance.now();
+    animDur = dur;
+
+    fromRGB = {
+      primary: hexToRgb(from.primary),
+      secondary: hexToRgb(from.secondary),
+      tertiary: hexToRgb(from.tertiary),
+    };
+
+    toRGB = {
+      primary: hexToRgb(to.primary),
+      secondary: hexToRgb(to.secondary),
+      tertiary: hexToRgb(to.tertiary),
+    };
+
+    pendingPersist = true;
+
+    const tick = (now) => {
+      const t = clamp01((now - animStart) / animDur);
+      const e = easeInOutCubic(t);
+
+      const cur = {
+        primary: rgbToHex(lerpRGB(fromRGB.primary, toRGB.primary, e)),
+        secondary: rgbToHex(lerpRGB(fromRGB.secondary, toRGB.secondary, e)),
+        tertiary: rgbToHex(lerpRGB(fromRGB.tertiary, toRGB.tertiary, e)),
+      };
+
+      applyColorsToCss(cur);
+
+      if (t < 1) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        raf = null;
+        // na konci nastav přesně cílový stav (kvůli zaokrouhlení) a persist
+        applyColorsToCss(state);
+        if (pendingPersist) persist();
+        pendingPersist = false;
+      }
+    };
+
+    raf = requestAnimationFrame(tick);
+  }
+
+  // okamžité přečtení aktuálních CSS vars
+  function readCssVars() {
+    const r = document.documentElement;
+    const cs = getComputedStyle(r);
+    return {
+      primary: cs.getPropertyValue("--primaryColor").trim(),
+      secondary: cs.getPropertyValue("--secondaryColor").trim(),
+      tertiary: cs.getPropertyValue("--tertiaryColor").trim(),
+    };
   }
 
   return api;
@@ -270,7 +361,71 @@ function normalizeColors(obj) {
   const tertiary = typeof obj.tertiary === "string" ? obj.tertiary : null;
 
   if (!primary || !secondary || !tertiary) return null;
-  return { primary, secondary, tertiary };
+
+  // minimální "normalizace" na #RRGGBB (kvůli interpolaci)
+  const p = normalizeHex(primary);
+  const s = normalizeHex(secondary);
+  const t = normalizeHex(tertiary);
+  if (!p || !s || !t) return null;
+
+  return { primary: p, secondary: s, tertiary: t };
+}
+
+function normalizeHex(hex) {
+  const h = (hex || "").trim();
+
+  // #rgb -> #rrggbb
+  const m3 = h.match(/^#([0-9a-f]{3})$/i);
+  if (m3) {
+    const x = m3[1];
+    return (
+      "#" +
+      x[0] + x[0] +
+      x[1] + x[1] +
+      x[2] + x[2]
+    ).toLowerCase();
+  }
+
+  const m6 = h.match(/^#([0-9a-f]{6})$/i);
+  if (m6) return ("#" + m6[1]).toLowerCase();
+
+  return null;
+}
+
+function hexToRgb(hex) {
+  const h = normalizeHex(hex) || "#000000";
+  const n = h.slice(1);
+  const r = parseInt(n.slice(0, 2), 16);
+  const g = parseInt(n.slice(2, 4), 16);
+  const b = parseInt(n.slice(4, 6), 16);
+  return { r, g, b };
+}
+
+function rgbToHex({ r, g, b }) {
+  const rr = clamp255(Math.round(r)).toString(16).padStart(2, "0");
+  const gg = clamp255(Math.round(g)).toString(16).padStart(2, "0");
+  const bb = clamp255(Math.round(b)).toString(16).padStart(2, "0");
+  return `#${rr}${gg}${bb}`;
+}
+
+function lerpRGB(a, b, t) {
+  return {
+    r: a.r + (b.r - a.r) * t,
+    g: a.g + (b.g - a.g) * t,
+    b: a.b + (b.b - a.b) * t,
+  };
+}
+
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function clamp01(x) {
+  return Math.max(0, Math.min(1, x));
+}
+
+function clamp255(x) {
+  return Math.max(0, Math.min(255, x));
 }
 
 function randomHex() {
