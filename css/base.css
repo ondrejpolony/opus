@@ -1,0 +1,53 @@
+:root{
+  --primaryColor: #5fffbf;
+  --secondaryColor: #000000;
+  --tertiaryColor: #ffffff;
+
+--dotSize: 0.5px;
+--dotGap: 10px;
+}
+
+/* základ stránky */
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  background: var(--tertiaryColor);
+  color: var(--secondaryColor);
+}
+
+/* ======================================================
+   ZÁKLADNÍ VZHLED MODULŮ (platí pro všechny)
+   ====================================================== */
+
+section[data-module]{
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+
+  background-color: var(--tertiaryColor);
+  background-image:
+    radial-gradient(
+      circle,
+      var(--secondaryColor) var(--dotSize),
+      transparent calc(var(--dotSize) + 1px)
+    );
+  background-size: var(--dotGap) var(--dotGap);
+}
+.placeholder-content{
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font: 16px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+
+  /* DŮLEŽITÉ: žádné background! */
+  color: var(--secondaryColor);
+  pointer-events: none;
+}
