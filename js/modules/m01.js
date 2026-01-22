@@ -5,8 +5,31 @@ export default function m01({ root, colors /*, complete */ }) {
   const patternIdD = `m01__lines_D`;
   const filterIdD = `m01__displacementFilter_D`;
 
-  // ✅ nový objekt C (vlnící se čáry)
+  // ✅ OP_001_C – vlnící se čáry respektující tvar D
   const opIdC = `m01__op_001_C`;
+  const clipIdC = `m01__clip_C`;
+  const filterIdC = `m01__wobbleFilter_C`;
+
+  // původní tvar D (použijeme i do clipPath)
+  const D_PATH =
+    `M67.857,88.306c-5.862,0-8.757,2.754-11.511,2.754-1.765,0-2.119-.92-2.119-1.978,0-6.075,5.58-15.113,5.58-21.821,0-9.111-5.931-18.218-5.931-21.749,0-1.412.917-2.191,2.682-2.191,2.119,0,12.287,1.837,15.251,1.837,3.884,0,6.287-2.472,10.171-2.472,3.74,0,7.978,4.378,7.978,15.608,0,11.934-5.79,24.149-12.71,24.149-4.873,0-7.274-4.025-7.274-7.909,0-1.202.707-2.047,2.119-2.047,1.34,0,6.354,2.401,7.909,2.401,1.624,0,2.823-.848,2.823-4.873,0-11.865-3.953-21.395-11.862-21.395-5.014,0-7.205,9.884-7.205,15.392,0,10.876,7.133,18.713,7.133,22.174,0,1.552-1.343,2.119-3.036,2.119Z`;
+
+  // vygeneruj čáry (viewBox 0..100)
+  const linesMarkup = (() => {
+    const yStart = 30;
+    const yEnd = 92;
+    const step = 2.6;          // hustota
+    const x0 = -10;
+    const x1 = 110;
+    let out = "";
+    let i = 0;
+    for (let y = yStart; y <= yEnd; y += step) {
+      const cls = i % 2 === 0 ? "m01-opc-line" : "m01-opc-line alt";
+      out += `<line class="${cls}" x1="${x0}" y1="${y.toFixed(2)}" x2="${x1}" y2="${y.toFixed(2)}" />`;
+      i++;
+    }
+    return out;
+  })();
 
   root.innerHTML = `
     <style>
@@ -37,21 +60,21 @@ export default function m01({ root, colors /*, complete */ }) {
         transition: stroke 500ms cubic-bezier(.2,.8,.2,1);
       }
 
-      /* ✅ OP_001_C: vlnící se čáry */
+      /* ✅ OP_001_C: čáry uvnitř D */
       #${opIdC} {
         mix-blend-mode: multiply;
-        pointer-events: none; /* ať se netluče s drag */
+        pointer-events: none; /* žádná interakce */
+        opacity: .8;
       }
       .m01-opc-line {
-        fill: none;
         stroke: var(--primaryColor);
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        transition: stroke 500ms cubic-bezier(.2,.8,.2,1);
+        stroke-width: .55;
         opacity: .65;
+        transition: stroke 500ms cubic-bezier(.2,.8,.2,1);
       }
       .m01-opc-line.alt {
         stroke: var(--tertiaryColor);
+        opacity: .55;
       }
     </style>
 
@@ -115,9 +138,50 @@ export default function m01({ root, colors /*, complete */ }) {
             />
           </feDisplacementMap>
         </filter>
+
+        <!-- ✅ Clip podle tvaru D -->
+        <clipPath id="${clipIdC}">
+          <path d="${D_PATH}" />
+        </clipPath>
+
+        <!-- ✅ Wobble filtr pro čáry (jen vlnění) -->
+        <filter id="${filterIdC}" x="-20%" y="-20%" width="140%" height="140%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.02 0.12"
+            numOctaves="1"
+            seed="2"
+            result="noise"
+          >
+            <animate
+              attributeName="baseFrequency"
+              dur="6s"
+              values="0.02 0.10; 0.03 0.14; 0.02 0.12"
+              repeatCount="indefinite"
+            />
+          </feTurbulence>
+
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="noise"
+            scale="2.2"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          >
+            <animate
+              attributeName="scale"
+              dur="4s"
+              values="1.2; 2.8; 1.6; 2.2; 1.2"
+              repeatCount="indefinite"
+            />
+          </feDisplacementMap>
+        </filter>
       </defs>
 
-      <!-- ✅ OP_001_C (vlnící se čáry) se vloží dynamicky jako <g id="m01__op_001_C"> ... -->
+      <!-- ✅ OP_001_C: čáry uvnitř D (pod D i B) -->
+      <g id="${opIdC}" clip-path="url(#${clipIdC})" filter="url(#${filterIdC})">
+        ${linesMarkup}
+      </g>
 
       <!-- ============ B ============ -->
 
@@ -160,7 +224,7 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
       <path id="m01_D" class="draggable"
         fill="url(#${patternIdD})"
         filter="url(#${filterIdD})"
-        d="M67.857,88.306c-5.862,0-8.757,2.754-11.511,2.754-1.765,0-2.119-.92-2.119-1.978,0-6.075,5.58-15.113,5.58-21.821,0-9.111-5.931-18.218-5.931-21.749,0-1.412.917-2.191,2.682-2.191,2.119,0,12.287,1.837,15.251,1.837,3.884,0,6.287-2.472,10.171-2.472,3.74,0,7.978,4.378,7.978,15.608,0,11.934-5.79,24.149-12.71,24.149-4.873,0-7.274-4.025-7.274-7.909,0-1.202.707-2.047,2.119-2.047,1.34,0,6.354,2.401,7.909,2.401,1.624,0,2.823-.848,2.823-4.873,0-11.865-3.953-21.395-11.862-21.395-5.014,0-7.205,9.884-7.205,15.392,0,10.876,7.133,18.713,7.133,22.174,0,1.552-1.343,2.119-3.036,2.119Z"
+        d="${D_PATH}"
       />
     </svg>
   `;
@@ -180,38 +244,6 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
   let startPt = null;
   let startT = { x: 0, y: 0 };
   let downAt = null;
-
-  // ======= OP_001_C: vytvoření + animace (vlnící se čáry)
-  const opC = createOp001C(svg, { id: opIdC, lines: 12, samples: 90 });
-
-  // vlož opC co nejvíc „do pozadí“ (hned za <defs>)
-  const defs = svg.querySelector("defs");
-  if (defs) {
-    // pokud je <defs>, vložíme g hned za něj, aby byl pod B a D
-    const afterDefs = defs.nextSibling;
-    svg.insertBefore(opC.g, afterDefs);
-  } else {
-    svg.insertBefore(opC.g, svg.firstChild);
-  }
-
-  // rAF loop jen pro opC (lehké), zruší se při abort
-  let rafId = 0;
-  let last = performance.now();
-  const tick = (now) => {
-    const dt = Math.min(0.05, (now - last) / 1000);
-    last = now;
-    op001C_update(opC, dt);
-    rafId = requestAnimationFrame(tick);
-  };
-  rafId = requestAnimationFrame(tick);
-
-  signal.addEventListener(
-    "abort",
-    () => {
-      if (rafId) cancelAnimationFrame(rafId);
-    },
-    { once: true }
-  );
 
   // ======= Pattern hover na B (jen když nedraguju)
   blobB.addEventListener(
@@ -345,21 +377,10 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
     { signal }
   );
 
-  // ======= Move (drag + OP_001_C pointer)
+  // ======= Move (drag)
   svg.addEventListener(
     "pointermove",
     (e) => {
-      // OP_001_C pointer (i při dragu to nevadí; jen „dýchá“ na pozadí)
-      {
-        const p = clientToSvg(svg, e.clientX, e.clientY);
-        const vb = svg.viewBox?.baseVal;
-        const w = vb?.width || 100;
-        const h = vb?.height || 100;
-        const xN = w ? p.x / w : 0.5;
-        const yN = h ? p.y / h : 0.5;
-        op001C_setPointer(opC, xN, yN, 1);
-      }
-
       if (!activeDrag || !startPt) return;
 
       const p = clientToSvg(svg, e.clientX, e.clientY);
@@ -418,7 +439,6 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
           setPrimaryColor(randomHex());
         }
         if (was === "D_eye" && isEyeOpen(eyeD)) {
-          // ✅ rotace barev se teď vizuálně přelije díky transition na fill/stroke
           rotateProjectColors();
         }
       }
@@ -445,7 +465,6 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
       return;
     }
 
-    // fallback: přečti z :root a proveď rotaci
     const r = document.documentElement;
     const cs = getComputedStyle(r);
     const p = cs.getPropertyValue("--primaryColor").trim();
@@ -486,145 +505,6 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
     target.setAttribute("transform", `translate(${x} ${y})`);
   }
 
-  // ======= OP_001_C internals (bez závislostí)
-  function createOp001C(svgEl, opts = {}) {
-    const {
-      id = "m01__op_001_C",
-      lines = 10,
-      samples = 80,
-      padding = 10, // v jednotkách viewBoxu (0..100)
-      amp = 2.8,    // amplituda ve viewBox jednotkách
-      freq = 1.6,
-      speed = 0.85,
-      strokeWidth = 0.35,
-    } = opts;
-
-    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    g.setAttribute("id", id);
-
-    const paths = [];
-    const meta = [];
-
-    for (let i = 0; i < lines; i++) {
-      const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      p.setAttribute("class", `m01-opc-line${i % 2 ? " alt" : ""}`);
-      p.setAttribute("stroke-width", String(strokeWidth));
-      g.appendChild(p);
-      paths.push(p);
-
-      meta.push({
-        phase: Math.random() * Math.PI * 2,
-        ampMul: 0.55 + Math.random() * 0.9,
-        freqMul: 0.75 + Math.random() * 0.7,
-      });
-    }
-
-    const vb = svgEl.viewBox?.baseVal;
-    const w = vb?.width || 100;
-    const h = vb?.height || 100;
-
-    return {
-      g,
-      paths,
-      meta,
-      t: 0,
-      w,
-      h,
-      padding,
-      samples,
-      amp,
-      freq,
-      speed,
-      pointerX: 0.5,
-      pointerY: 0.5,
-      pointerPower: 0.0,
-    };
-  }
-
-  function op001C_setPointer(st, xNorm, yNorm, power = 1) {
-    st.pointerX = Math.max(0, Math.min(1, xNorm));
-    st.pointerY = Math.max(0, Math.min(1, yNorm));
-    st.pointerPower = Math.max(st.pointerPower, Math.max(0, Math.min(1, power)));
-  }
-
-  function op001C_noise1(n) {
-    const s = Math.sin(n * 12.9898) * 43758.5453;
-    return s - Math.floor(s);
-  }
-
-  function op001C_update(st, dt) {
-    // kdyby někdo změnil viewBox za běhu
-    const vb = svg.viewBox?.baseVal;
-    st.w = vb?.width || 100;
-    st.h = vb?.height || 100;
-
-    st.t += dt * st.speed;
-
-    const w = st.w;
-    const h = st.h;
-    const pad = st.padding;
-
-    const x0 = pad;
-    const x1 = Math.max(pad + 1, w - pad);
-    const usableW = x1 - x0;
-
-    const top = pad;
-    const bottom = Math.max(top + 1, h - pad);
-    const span = bottom - top;
-
-    const lines = st.paths.length;
-    const samples = st.samples;
-
-    const px = x0 + usableW * st.pointerX;
-    const py = top + span * st.pointerY;
-    const influenceR = usableW * (0.18 + 0.22 * st.pointerPower);
-
-    for (let i = 0; i < lines; i++) {
-      const p = st.paths[i];
-      const m = st.meta[i];
-
-      const yBase = top + (span * (i + 1)) / (lines + 1);
-
-      const A = st.amp * m.ampMul * (0.9 + 0.25 * Math.sin(st.t * 0.6 + i));
-      const F = st.freq * m.freqMul;
-
-      let d = "";
-
-      for (let s = 0; s <= samples; s++) {
-        const u = s / samples;
-        const x = x0 + u * usableW;
-
-        let y =
-          yBase +
-          Math.sin(u * Math.PI * 2 * F + st.t + m.phase) * A;
-
-        y +=
-          Math.sin(u * Math.PI * 2 * (F * 2.15) + st.t * 1.35 + m.phase * 1.7) *
-          (A * 0.22);
-
-        const nn = op001C_noise1(u * 80 + i * 10 + st.t * 0.25);
-        y += (nn - 0.5) * (A * 0.12);
-
-        if (st.pointerPower > 0.001) {
-          const dx = x - px;
-          const dy = yBase - py;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          const k = Math.max(0, 1 - dist / influenceR);
-
-          y += (py - yBase) * k * 0.22 * st.pointerPower;
-          y += Math.sin(st.t * 3.0 + u * 9 + i) * (A * 0.10) * k * st.pointerPower;
-        }
-
-        if (s === 0) d += `M ${x.toFixed(2)} ${y.toFixed(2)}`;
-        else d += ` L ${x.toFixed(2)} ${y.toFixed(2)}`;
-      }
-
-      p.setAttribute("d", d);
-    }
-
-    st.pointerPower *= 0.94;
-  }
-
-  // ✅ umožní engine uklidit eventy a rAF při přepnutí modulu
+  // ✅ umožní engine uklidit eventy při přepnutí modulu (pokud cleanup používáš)
   return () => ac.abort();
 }
