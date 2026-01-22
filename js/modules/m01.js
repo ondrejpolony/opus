@@ -5,6 +5,9 @@ export default function m01({ root, colors /*, complete */ }) {
   const patternIdD = `m01__lines_D`;
   const filterIdD = `m01__displacementFilter_D`;
 
+  // ✅ nový objekt C (vlnící se čáry)
+  const opIdC = `m01__op_001_C`;
+
   root.innerHTML = `
     <style>
       /* Lokální styly jen pro tento modul */
@@ -32,6 +35,23 @@ export default function m01({ root, colors /*, complete */ }) {
       .m01-pattern-line {
         stroke: var(--primaryColor);
         transition: stroke 500ms cubic-bezier(.2,.8,.2,1);
+      }
+
+      /* ✅ OP_001_C: vlnící se čáry */
+      #${opIdC} {
+        mix-blend-mode: multiply;
+        pointer-events: none; /* ať se netluče s drag */
+      }
+      .m01-opc-line {
+        fill: none;
+        stroke: var(--primaryColor);
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        transition: stroke 500ms cubic-bezier(.2,.8,.2,1);
+        opacity: .65;
+      }
+      .m01-opc-line.alt {
+        stroke: var(--tertiaryColor);
       }
     </style>
 
@@ -97,6 +117,8 @@ export default function m01({ root, colors /*, complete */ }) {
         </filter>
       </defs>
 
+      <!-- ✅ OP_001_C (vlnící se čáry) se vloží dynamicky jako <g id="m01__op_001_C"> ... -->
+
       <!-- ============ B ============ -->
 
       <!-- oko (nad objektem B) -->
@@ -158,6 +180,38 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
   let startPt = null;
   let startT = { x: 0, y: 0 };
   let downAt = null;
+
+  // ======= OP_001_C: vytvoření + animace (vlnící se čáry)
+  const opC = createOp001C(svg, { id: opIdC, lines: 12, samples: 90 });
+
+  // vlož opC co nejvíc „do pozadí“ (hned za <defs>)
+  const defs = svg.querySelector("defs");
+  if (defs) {
+    // pokud je <defs>, vložíme g hned za něj, aby byl pod B a D
+    const afterDefs = defs.nextSibling;
+    svg.insertBefore(opC.g, afterDefs);
+  } else {
+    svg.insertBefore(opC.g, svg.firstChild);
+  }
+
+  // rAF loop jen pro opC (lehké), zruší se při abort
+  let rafId = 0;
+  let last = performance.now();
+  const tick = (now) => {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    op001C_update(opC, dt);
+    rafId = requestAnimationFrame(tick);
+  };
+  rafId = requestAnimationFrame(tick);
+
+  signal.addEventListener(
+    "abort",
+    () => {
+      if (rafId) cancelAnimationFrame(rafId);
+    },
+    { once: true }
+  );
 
   // ======= Pattern hover na B (jen když nedraguju)
   blobB.addEventListener(
@@ -291,10 +345,21 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
     { signal }
   );
 
-  // ======= Move (drag)
+  // ======= Move (drag + OP_001_C pointer)
   svg.addEventListener(
     "pointermove",
     (e) => {
+      // OP_001_C pointer (i při dragu to nevadí; jen „dýchá“ na pozadí)
+      {
+        const p = clientToSvg(svg, e.clientX, e.clientY);
+        const vb = svg.viewBox?.baseVal;
+        const w = vb?.width || 100;
+        const h = vb?.height || 100;
+        const xN = w ? p.x / w : 0.5;
+        const yN = h ? p.y / h : 0.5;
+        op001C_setPointer(opC, xN, yN, 1);
+      }
+
       if (!activeDrag || !startPt) return;
 
       const p = clientToSvg(svg, e.clientX, e.clientY);
@@ -420,4 +485,146 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
   function writeTranslate(target, x, y) {
     target.setAttribute("transform", `translate(${x} ${y})`);
   }
+
+  // ======= OP_001_C internals (bez závislostí)
+  function createOp001C(svgEl, opts = {}) {
+    const {
+      id = "m01__op_001_C",
+      lines = 10,
+      samples = 80,
+      padding = 10, // v jednotkách viewBoxu (0..100)
+      amp = 2.8,    // amplituda ve viewBox jednotkách
+      freq = 1.6,
+      speed = 0.85,
+      strokeWidth = 0.35,
+    } = opts;
+
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("id", id);
+
+    const paths = [];
+    const meta = [];
+
+    for (let i = 0; i < lines; i++) {
+      const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      p.setAttribute("class", `m01-opc-line${i % 2 ? " alt" : ""}`);
+      p.setAttribute("stroke-width", String(strokeWidth));
+      g.appendChild(p);
+      paths.push(p);
+
+      meta.push({
+        phase: Math.random() * Math.PI * 2,
+        ampMul: 0.55 + Math.random() * 0.9,
+        freqMul: 0.75 + Math.random() * 0.7,
+      });
+    }
+
+    const vb = svgEl.viewBox?.baseVal;
+    const w = vb?.width || 100;
+    const h = vb?.height || 100;
+
+    return {
+      g,
+      paths,
+      meta,
+      t: 0,
+      w,
+      h,
+      padding,
+      samples,
+      amp,
+      freq,
+      speed,
+      pointerX: 0.5,
+      pointerY: 0.5,
+      pointerPower: 0.0,
+    };
+  }
+
+  function op001C_setPointer(st, xNorm, yNorm, power = 1) {
+    st.pointerX = Math.max(0, Math.min(1, xNorm));
+    st.pointerY = Math.max(0, Math.min(1, yNorm));
+    st.pointerPower = Math.max(st.pointerPower, Math.max(0, Math.min(1, power)));
+  }
+
+  function op001C_noise1(n) {
+    const s = Math.sin(n * 12.9898) * 43758.5453;
+    return s - Math.floor(s);
+  }
+
+  function op001C_update(st, dt) {
+    // kdyby někdo změnil viewBox za běhu
+    const vb = svg.viewBox?.baseVal;
+    st.w = vb?.width || 100;
+    st.h = vb?.height || 100;
+
+    st.t += dt * st.speed;
+
+    const w = st.w;
+    const h = st.h;
+    const pad = st.padding;
+
+    const x0 = pad;
+    const x1 = Math.max(pad + 1, w - pad);
+    const usableW = x1 - x0;
+
+    const top = pad;
+    const bottom = Math.max(top + 1, h - pad);
+    const span = bottom - top;
+
+    const lines = st.paths.length;
+    const samples = st.samples;
+
+    const px = x0 + usableW * st.pointerX;
+    const py = top + span * st.pointerY;
+    const influenceR = usableW * (0.18 + 0.22 * st.pointerPower);
+
+    for (let i = 0; i < lines; i++) {
+      const p = st.paths[i];
+      const m = st.meta[i];
+
+      const yBase = top + (span * (i + 1)) / (lines + 1);
+
+      const A = st.amp * m.ampMul * (0.9 + 0.25 * Math.sin(st.t * 0.6 + i));
+      const F = st.freq * m.freqMul;
+
+      let d = "";
+
+      for (let s = 0; s <= samples; s++) {
+        const u = s / samples;
+        const x = x0 + u * usableW;
+
+        let y =
+          yBase +
+          Math.sin(u * Math.PI * 2 * F + st.t + m.phase) * A;
+
+        y +=
+          Math.sin(u * Math.PI * 2 * (F * 2.15) + st.t * 1.35 + m.phase * 1.7) *
+          (A * 0.22);
+
+        const nn = op001C_noise1(u * 80 + i * 10 + st.t * 0.25);
+        y += (nn - 0.5) * (A * 0.12);
+
+        if (st.pointerPower > 0.001) {
+          const dx = x - px;
+          const dy = yBase - py;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const k = Math.max(0, 1 - dist / influenceR);
+
+          y += (py - yBase) * k * 0.22 * st.pointerPower;
+          y += Math.sin(st.t * 3.0 + u * 9 + i) * (A * 0.10) * k * st.pointerPower;
+        }
+
+        if (s === 0) d += `M ${x.toFixed(2)} ${y.toFixed(2)}`;
+        else d += ` L ${x.toFixed(2)} ${y.toFixed(2)}`;
+      }
+
+      p.setAttribute("d", d);
+    }
+
+    st.pointerPower *= 0.94;
+  }
+
+  // ✅ umožní engine uklidit eventy a rAF při přepnutí modulu
+  return () => ac.abort();
 }
