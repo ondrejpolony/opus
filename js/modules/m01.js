@@ -5,32 +5,6 @@ export default function m01({ root, colors /*, complete */ }) {
   const patternIdD = `m01__lines_D`;
   const filterIdD = `m01__displacementFilter_D`;
 
-  // ✅ OP_001_C – vlnící se čáry respektující tvar D
-  const opIdC = `m01__op_001_C`;
-  const clipIdC = `m01__clip_C`;
-  const filterIdC = `m01__wobbleFilter_C`;
-
-  // původní tvar D (použijeme i do clipPath)
-  const D_PATH =
-    `M67.857,88.306c-5.862,0-8.757,2.754-11.511,2.754-1.765,0-2.119-.92-2.119-1.978,0-6.075,5.58-15.113,5.58-21.821,0-9.111-5.931-18.218-5.931-21.749,0-1.412.917-2.191,2.682-2.191,2.119,0,12.287,1.837,15.251,1.837,3.884,0,6.287-2.472,10.171-2.472,3.74,0,7.978,4.378,7.978,15.608,0,11.934-5.79,24.149-12.71,24.149-4.873,0-7.274-4.025-7.274-7.909,0-1.202.707-2.047,2.119-2.047,1.34,0,6.354,2.401,7.909,2.401,1.624,0,2.823-.848,2.823-4.873,0-11.865-3.953-21.395-11.862-21.395-5.014,0-7.205,9.884-7.205,15.392,0,10.876,7.133,18.713,7.133,22.174,0,1.552-1.343,2.119-3.036,2.119Z`;
-
-  // vygeneruj čáry (viewBox 0..100)
-  const linesMarkup = (() => {
-    const yStart = 30;
-    const yEnd = 92;
-    const step = 2.6;          // hustota
-    const x0 = -10;
-    const x1 = 110;
-    let out = "";
-    let i = 0;
-    for (let y = yStart; y <= yEnd; y += step) {
-      const cls = i % 2 === 0 ? "m01-opc-line" : "m01-opc-line alt";
-      out += `<line class="${cls}" x1="${x0}" y1="${y.toFixed(2)}" x2="${x1}" y2="${y.toFixed(2)}" />`;
-      i++;
-    }
-    return out;
-  })();
-
   root.innerHTML = `
     <style>
       /* Lokální styly jen pro tento modul */
@@ -58,23 +32,6 @@ export default function m01({ root, colors /*, complete */ }) {
       .m01-pattern-line {
         stroke: var(--primaryColor);
         transition: stroke 500ms cubic-bezier(.2,.8,.2,1);
-      }
-
-      /* ✅ OP_001_C: čáry uvnitř D */
-      #${opIdC} {
-        mix-blend-mode: multiply;
-        pointer-events: none; /* žádná interakce */
-        opacity: .8;
-      }
-      .m01-opc-line {
-        stroke: var(--primaryColor);
-        stroke-width: .55;
-        opacity: .65;
-        transition: stroke 500ms cubic-bezier(.2,.8,.2,1);
-      }
-      .m01-opc-line.alt {
-        stroke: var(--tertiaryColor);
-        opacity: .55;
       }
     </style>
 
@@ -138,50 +95,7 @@ export default function m01({ root, colors /*, complete */ }) {
             />
           </feDisplacementMap>
         </filter>
-
-        <!-- ✅ Clip podle tvaru D -->
-        <clipPath id="${clipIdC}">
-          <path d="${D_PATH}" />
-        </clipPath>
-
-        <!-- ✅ Wobble filtr pro čáry (jen vlnění) -->
-        <filter id="${filterIdC}" x="-20%" y="-20%" width="140%" height="140%">
-          <feTurbulence
-            type="fractalNoise"
-            baseFrequency="0.02 0.12"
-            numOctaves="1"
-            seed="2"
-            result="noise"
-          >
-            <animate
-              attributeName="baseFrequency"
-              dur="6s"
-              values="0.02 0.10; 0.03 0.14; 0.02 0.12"
-              repeatCount="indefinite"
-            />
-          </feTurbulence>
-
-          <feDisplacementMap
-            in="SourceGraphic"
-            in2="noise"
-            scale="2.2"
-            xChannelSelector="R"
-            yChannelSelector="G"
-          >
-            <animate
-              attributeName="scale"
-              dur="4s"
-              values="1.2; 2.8; 1.6; 2.2; 1.2"
-              repeatCount="indefinite"
-            />
-          </feDisplacementMap>
-        </filter>
       </defs>
-
-      <!-- ✅ OP_001_C: čáry uvnitř D (pod D i B) -->
-      <g id="${opIdC}" clip-path="url(#${clipIdC})" filter="url(#${filterIdC})">
-        ${linesMarkup}
-      </g>
 
       <!-- ============ B ============ -->
 
@@ -224,7 +138,7 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
       <path id="m01_D" class="draggable"
         fill="url(#${patternIdD})"
         filter="url(#${filterIdD})"
-        d="${D_PATH}"
+        d="M67.857,88.306c-5.862,0-8.757,2.754-11.511,2.754-1.765,0-2.119-.92-2.119-1.978,0-6.075,5.58-15.113,5.58-21.821,0-9.111-5.931-18.218-5.931-21.749,0-1.412.917-2.191,2.682-2.191,2.119,0,12.287,1.837,15.251,1.837,3.884,0,6.287-2.472,10.171-2.472,3.74,0,7.978,4.378,7.978,15.608,0,11.934-5.79,24.149-12.71,24.149-4.873,0-7.274-4.025-7.274-7.909,0-1.202.707-2.047,2.119-2.047,1.34,0,6.354,2.401,7.909,2.401,1.624,0,2.823-.848,2.823-4.873,0-11.865-3.953-21.395-11.862-21.395-5.014,0-7.205,9.884-7.205,15.392,0,10.876,7.133,18.713,7.133,22.174,0,1.552-1.343,2.119-3.036,2.119Z"
       />
     </svg>
   `;
@@ -439,6 +353,7 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
           setPrimaryColor(randomHex());
         }
         if (was === "D_eye" && isEyeOpen(eyeD)) {
+          // ✅ rotace barev se teď vizuálně přelije díky transition na fill/stroke
           rotateProjectColors();
         }
       }
@@ -465,6 +380,7 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
       return;
     }
 
+    // fallback: přečti z :root a proveď rotaci
     const r = document.documentElement;
     const cs = getComputedStyle(r);
     const p = cs.getPropertyValue("--primaryColor").trim();
@@ -504,7 +420,4 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
   function writeTranslate(target, x, y) {
     target.setAttribute("transform", `translate(${x} ${y})`);
   }
-
-  // ✅ umožní engine uklidit eventy při přepnutí modulu (pokud cleanup používáš)
-  return () => ac.abort();
 }
