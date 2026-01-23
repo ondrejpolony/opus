@@ -1,6 +1,6 @@
 // js/modules/m01.js
 
-export default function m01({ root, colors /*, complete */ }) {
+export default function m01({ root, colors, complete }) {
   const patternIdB = `m01__dots_B`;
   const patternIdD = `m01__lines_D`;
   const filterIdD = `m01__displacementFilter_D`;
@@ -39,6 +39,17 @@ export default function m01({ root, colors /*, complete */ }) {
 
       /* op_001_C: jen vizuál, bez interakce */
       #m01__op_001_C { pointer-events: none; }
+	  
+	  /* END overlay text (nahoře, bez interakce) */
+#m01__end_text {
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms cubic-bezier(.2,.8,.2,1);
+}
+#m01__end_text.is-visible {
+  opacity: 1;
+}
+	  
     </style>
 
     <svg xmlns="http://www.w3.org/2000/svg"
@@ -187,7 +198,7 @@ export default function m01({ root, colors /*, complete */ }) {
 
           <!-- necháváme <g><g>, jen doplníme id -->
           <g id="m01__clip_text_outer"><g id="m01__clip_text_inner">
-            <g fill="var(--primaryColor)">
+            <g id="m01__circles_bottom" fill="var(--primaryColor)">
               <circle cx="50" cy="171" r="8" stroke="var(--primaryColor)" fill="none" stroke-width="0.3">
                 <animate attributeName="cx" begin="0s" dur="1s" from="50" to="80" repeatCount="indefinite"></animate>
               </circle>
@@ -410,31 +421,31 @@ export default function m01({ root, colors /*, complete */ }) {
               repeatCount="indefinite"
             ></animateTransform>
           </g>
-
-          <animateTransform
-            attributeName="transform"
-            attributeType="XML"
-            type="translate"
-            values="0 0; 0 0; -25 20; 0 0;"
-            begin="7s"
-            dur="7s"
-            repeatCount="indefinite"
-            keyTimes="0;0.985;0.99;1"
-          ></animateTransform>
         </g>
       </g>
 
       <!-- ============ B ============ -->
 
       <circle
-        id="m01_B_oko"
-        class="m01-eye draggable"
-        cx="30"
-        cy="30"
-        r="0"
-        data-open="0"
-        transform="translate(0 0)"
-      />
+  id="m01_B_oko"
+  class="m01-eye draggable"
+  cx="30"
+  cy="30"
+  r="0"
+  data-open="0"
+  transform="translate(0 0)"
+>
+		<animate id="m01__pulse_B" attributeName="r" dur="0.6s" values="8;9;8" repeatCount="indefinite" begin="indefinite"/>
+		<animate
+  id="m01__eye_B_expand"
+  attributeName="r"
+  from="8"
+  to="51"
+  dur="0.5s"
+  fill="freeze"
+  begin="indefinite"
+/>
+		</circle>
 
       <path id="m01_B" class="draggable"
         fill="var(--primaryColor)"
@@ -610,20 +621,67 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
 
       <!-- ============ D ============ -->
       <circle
-        id="m01_D_oko"
-        class="m01-eye draggable"
-        cx="73"
-        cy="62"
-        r="0"
-        data-open="0"
-        transform="translate(0 0)"
-      />
+  id="m01_D_oko"
+  class="m01-eye draggable"
+  cx="73"
+  cy="62"
+  r="0"
+  data-open="0"
+  transform="translate(0 0)"
+>
+  <animate id="m01__pulse_D" attributeName="r" dur="0.6s" values="8;9;8" repeatCount="indefinite" begin="indefinite"/>
+</circle>
 
       <path id="m01_D" class="draggable"
         fill="url(#${patternIdD})"
         filter="url(#${filterIdD})"
         d="M67.857,88.306c-5.862,0-8.757,2.754-11.511,2.754-1.765,0-2.119-.92-2.119-1.978,0-6.075,5.58-15.113,5.58-21.821,0-9.111-5.931-18.218-5.931-21.749,0-1.412.917-2.191,2.682-2.191,2.119,0,12.287,1.837,15.251,1.837,3.884,0,6.287-2.472,10.171-2.472,3.74,0,7.978,4.378,7.978,15.608,0,11.934-5.79,24.149-12.71,24.149-4.873,0-7.274-4.025-7.274-7.909,0-1.202.707-2.047,2.119-2.047,1.34,0,6.354,2.401,7.909,2.401,1.624,0,2.823-.848,2.823-4.873,0-11.865-3.953-21.395-11.862-21.395-5.014,0-7.205,9.884-7.205,15.392,0,10.876,7.133,18.713,7.133,22.174,0,1.552-1.343,2.119-3.036,2.119Z"
       />
+	  
+	  <!-- ============ END TEXT OVERLAY (nejvýš) ============ -->
+<g id="m01__end_text">
+  <!-- wrapper pro pozicování na střed -->
+  <g id="m01__end_text_wrap">
+    <!-- spodní (primární) -->
+    <text
+      id="m01__end_text_shadow"
+      x="50.1%" y="50.1%"
+      text-anchor="middle"
+      dominant-baseline="middle"
+      font-size="5"
+      fill="var(--tertiaryColor)"
+      style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;"
+    >
+      Možná uvidíš...
+    </text>
+
+    <!-- horní (sekundární) -->
+    <text
+      id="m01__end_text_main"
+      x="50%" y="50%"
+      text-anchor="middle"
+      dominant-baseline="middle"
+      font-size="5"
+      fill="var(--secondaryColor)"
+      style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;"
+    >
+      Možná uvidíš...
+    </text>
+
+    <!-- záchvěv -->
+    <animateTransform
+      attributeName="transform"
+      attributeType="XML"
+      type="translate"
+      values="0 0; 0.02 0.037; 0.11 -0.043; 0.01 0.21; 0.076 0.12; 0.21 0.11"
+      begin="0s"
+      dur="0.2s"
+      repeatCount="indefinite"
+    />
+  </g>
+</g>
+
+	  
     </svg>
   `;
 
@@ -647,7 +705,7 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
   blobB.addEventListener(
     "pointerenter",
     () => {
-      if (activeDrag) return;
+      if (activeDrag || meetLocked) return;
       blobB.setAttribute("fill", `url(#${patternIdB})`);
     },
     { signal }
@@ -656,7 +714,7 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
   blobB.addEventListener(
     "pointerleave",
     () => {
-      if (activeDrag) return;
+      if (activeDrag || meetLocked) return;
       blobB.setAttribute("fill", "var(--primaryColor)");
     },
     { signal }
@@ -670,7 +728,7 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
   blobD.addEventListener(
     "pointerenter",
     () => {
-      if (activeDrag) return;
+      if (activeDrag || meetLocked) return;
       blobD.setAttribute("fill", "var(--primaryColor)");
       blobD.setAttribute("d", D_SPIKY);
     },
@@ -680,7 +738,7 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
   blobD.addEventListener(
     "pointerleave",
     () => {
-      if (activeDrag) return;
+      if (activeDrag || meetLocked) return;
       blobD.setAttribute("fill", `url(#${patternIdD})`);
       blobD.setAttribute("d", D_NORMAL);
     },
@@ -690,11 +748,160 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
   // ======= Helpers pro oči
   const isEyeOpen = (eye) => eye.dataset.open === "1";
   let clipAnimStarted = false;
+  let meetExpandStarted = false;
+  let postCompleteActive = false;
+  let eyeActionsEnabled = true; // klik na oči (random/rotate)
+  
+  function enterPostCompleteState() {
+	    // --- DŮLEŽITÉ: odemkni modul, jinak end() vždycky returnne
+  meetLocked = false;
 
-  const setEyeOpen = (eye, open) => {
+  // --- a povol akce očí (random/rotate)
+  eyeActionsEnabled = true;
+  postCompleteActive = true;
+
+  // 3) oko B zpět na původní velikost
+  eyeB.setAttribute("r", isEyeOpen(eyeB) ? "8" : "0");
+  eyeD.setAttribute("r", isEyeOpen(eyeD) ? "8" : "0");
+
+  // 1) B + D i s očima do středu (50,50 ve viewBox)
+  movePairCenterTo(blobB, eyeB, 30, 50);
+  movePairCenterTo(blobD, eyeD, 70, 50);
+
+const c1 = root.querySelector("#m01__circles_bottom");
+c1?.setAttribute("display", "none");
+
+  // 4) texty pryč (clip path i závěrečný – vezmeme to „univerzálně“)
+  svg.querySelectorAll("text").forEach((t) => {
+    t.style.display = "none";
+  });
+
+  // volitelně: kdyby byl finální text ve vlastní group a měl pointer-events none,
+  // nic tím nezkazíš – tohle je nejjistější
+}
+
+function movePairCenterTo(blob, eye, tx, ty) {
+  const c = getEyeCenter(eye); // tuhle už máš
+  const dx = tx - c.x;
+  const dy = ty - c.y;
+
+  const tb = readTranslate(blob);
+  const te = readTranslate(eye);
+
+  const nx = tb.x + dx;
+  const ny = tb.y + dy;
+
+  writeTranslate(blob, nx, ny);
+  writeTranslate(eye, nx, ny);
+}
+  
+  let eyeHoverSuppressed = false;
+let eyeHoverTimer = null;
+  
+  let meetLocked = false; // po odpálení překryvu se vše zamkne (kromě očí)
+
+function lockAfterMeet() {
+  if (meetLocked) return;
+  meetLocked = true;
+
+  // 1) B a D přestanou reagovat na hover/click (myš je neuvidí)
+  blobB.style.pointerEvents = "none";
+  blobD.style.pointerEvents = "none";
+
+  // opatrně: i když máš pointer-events v CSS pro C, necháme to explicitně
+  const c = root.querySelector("#m01__op_001_C");
+  if (c) c.style.pointerEvents = "none";
+
+  // 2) Drag vypneme globálně (move/end už nic neudělá, pointerdown na písmena ani nezačne)
+  activeDrag = null;
+  startPt = null;
+  downAt = null;
+
+  // 3) kurzory sjednotíme (oči si dál jedou svoje)
+  blobB.style.cursor = "default";
+  blobD.style.cursor = "default";
+  
+   // oči: dočasně vypni hover na 5000 ms + fixní barvy
+  eyeHoverSuppressed = true;
+
+  // sundej hover class, kdyby tam zrovna byla
+  eyeB.classList.remove("is-hover");
+  eyeD.classList.remove("is-hover");
+
+  // fixní barvy po dobu suppression
+  eyeB.style.fill = "var(--primaryColor)";
+  eyeD.style.fill = "var(--secondaryColor)";
+
+  // po 5000 ms hover zase povol
+  window.clearTimeout(eyeHoverTimer);
+  eyeHoverTimer = window.setTimeout(() => {
+    eyeHoverSuppressed = false;
+
+    // vrať řízení barvy na CSS
+    eyeB.style.fill = "";
+    eyeD.style.fill = "";
+
+    // úklid
+    eyeB.classList.remove("is-hover");
+    eyeD.classList.remove("is-hover");
+  }, 5000);
+}
+  
+    // ======= meetReady: když jsou oči otevřené a jejich středy se překryjí
+  let meetReady = false;
+
+  function getEyeCenter(eye) {
+    const cx = parseFloat(eye.getAttribute("cx") || "0");
+    const cy = parseFloat(eye.getAttribute("cy") || "0");
+    const t = readTranslate(eye); // už existuje níž
+    return { x: cx + t.x, y: cy + t.y };
+  }
+
+  function setMeetReady(next) {
+  if (meetReady === next) return;
+  meetReady = next;
+
+  const aB = root.querySelector("#m01__pulse_B");
+  const aD = root.querySelector("#m01__pulse_D");
+
+  // pulz jen když meetReady = true
+  if (meetReady) {
+    try { aB?.beginElement?.(); } catch {}
+    try { aD?.beginElement?.(); } catch {}
+  } else {
+    try { aB?.endElement?.(); } catch {}
+    try { aD?.endElement?.(); } catch {}
+
+    // po stopnutí vrať poloměr podle open/closed
+    eyeB.setAttribute("r", isEyeOpen(eyeB) ? "8" : "0");
+    eyeD.setAttribute("r", isEyeOpen(eyeD) ? "8" : "0");
+  }
+}
+
+
+  function updateMeetReady() {
+    // meetReady dává smysl jen když jsou obě oči otevřené (viditelné)
+    if (!isEyeOpen(eyeB) || !isEyeOpen(eyeD)) {
+      setMeetReady(false);
+      return;
+    }
+
+    const a = getEyeCenter(eyeB);
+    const b = getEyeCenter(eyeD);
+
+    // prah pro "zákryt" (v souřadnicích viewBox 0–100)
+    const dist = Math.hypot(a.x - b.x, a.y - b.y);
+    const THRESH = 1.2;
+
+    setMeetReady(dist <= THRESH);
+  }
+
+
+    const setEyeOpen = (eye, open) => {
     eye.dataset.open = open ? "1" : "0";
     eye.setAttribute("r", open ? "8" : "0");
     maybeStartClipAnimation();
+    updateMeetReady();
   };
 
   function maybeStartClipAnimation() {
@@ -714,24 +921,26 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
 
   // ======= Oko hover (sekundární), jen když je otevřené a nedraguju
   function bindEyeHover(eye) {
-    eye.addEventListener(
-      "pointerenter",
-      () => {
-        if (activeDrag) return;
-        if (!isEyeOpen(eye)) return;
-        eye.classList.add("is-hover");
-      },
-      { signal }
-    );
+  eye.addEventListener(
+    "pointerenter",
+    () => {
+      if (activeDrag) return;
+      if (!isEyeOpen(eye)) return;
+      if (eyeHoverSuppressed) return;
+      eye.classList.add("is-hover");
+    },
+    { signal }
+  );
 
-    eye.addEventListener(
-      "pointerleave",
-      () => {
-        eye.classList.remove("is-hover");
-      },
-      { signal }
-    );
-  }
+  eye.addEventListener(
+    "pointerleave",
+    () => {
+      // při suppression nechceme, aby se tu cokoliv "přebarvovalo" přes class
+      eye.classList.remove("is-hover");
+    },
+    { signal }
+  );
+}
   bindEyeHover(eyeB);
   bindEyeHover(eyeD);
 
@@ -739,6 +948,7 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
   blobB.addEventListener(
     "pointerdown",
     (e) => {
+		if (meetLocked) return;
       activeDrag = "B";
       blobB.setPointerCapture?.(e.pointerId);
       startPt = clientToSvg(svg, e.clientX, e.clientY);
@@ -768,6 +978,7 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
   blobD.addEventListener(
     "pointerdown",
     (e) => {
+		if (meetLocked) return;
       activeDrag = "D";
       blobD.setPointerCapture?.(e.pointerId);
       startPt = clientToSvg(svg, e.clientX, e.clientY);
@@ -797,6 +1008,8 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
   svg.addEventListener(
     "pointermove",
     (e) => {
+      if (meetLocked) return;
+	  if (postCompleteActive) return;
       if (!activeDrag || !startPt) return;
 
       const p = clientToSvg(svg, e.clientX, e.clientY);
@@ -809,6 +1022,7 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
         const ny = startT.y + dy;
         writeTranslate(blobB, nx, ny);
         writeTranslate(eyeB, nx, ny);
+		updateMeetReady();
         return;
       }
 
@@ -818,6 +1032,7 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
         const ny = startT.y + dy;
         writeTranslate(blobD, nx, ny);
         writeTranslate(eyeD, nx, ny);
+		updateMeetReady();
         return;
       }
     },
@@ -826,6 +1041,13 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
 
   // ======= End: click vs drag + akce
   const end = (e) => {
+    if (meetLocked) {
+      // jen kvůli jistotě: ukliď drag stav, ale nech oči živé
+      activeDrag = null;
+      startPt = null;
+      downAt = null;
+      return;
+    }
     if (!activeDrag) return;
 
     const was = activeDrag;
@@ -849,18 +1071,67 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
         // klik na písmeno: toggle oko
         if (was === "B") setEyeOpen(eyeB, !isEyeOpen(eyeB));
         if (was === "D") setEyeOpen(eyeD, !isEyeOpen(eyeD));
+		
+		// === MEET → expand oka B po uvolnění kliknutí
 
-        // klik na oko: akce (jen když je otevřené)
-        if (was === "B_eye" && isEyeOpen(eyeB)) {
-          setPrimaryColor(randomHex());
-        }
-        if (was === "D_eye" && isEyeOpen(eyeD)) {
-          rotateProjectColors();
-        }
+
+// klik na oko: akce (jen když je otevřené) + jen když jsou akce povolené
+if (was === "B_eye" && isEyeOpen(eyeB) && eyeActionsEnabled) {
+  setPrimaryColor(randomHex());
+}
+if (was === "D_eye" && isEyeOpen(eyeD) && eyeActionsEnabled) {
+  rotateProjectColors();
+}
+
       }
     }
 
-    downAt = null;
+    updateMeetReady();
+	
+	// === po uvolnění: pokud je meetReady, odpal expanzi oka B
+if (meetReady && !meetExpandStarted) {
+  meetExpandStarted = true;
+    // dočasně vypni akce očí (random/rotate) jen po locku a jen na 5000ms
+  eyeActionsEnabled = false;
+  window.setTimeout(() => {
+    eyeActionsEnabled = true;
+  }, 5000);
+  lockAfterMeet();
+  
+    // po 4000ms dokonči modul (ať engine načte další)
+  // po 4000ms dokonči modul (ať engine načte další)
+if (typeof complete === "function") {
+  window.setTimeout(() => {
+    try { complete(); } catch {}
+
+    // cca 200ms po complete přepni modul do "dohrávacího" stavu
+    window.setTimeout(() => {
+      try { enterPostCompleteState(); } catch {}
+    }, 200);
+
+  }, 4000);
+}
+
+
+  const pulse = root.querySelector("#m01__pulse_B");
+  try { pulse?.endElement?.(); } catch {}
+
+  const targetPx = maxCornerDistancePx(svg, eyeB);
+  const targetR  = pxToSvgLen(svg, targetPx);
+
+  const fromR = getCircleR(eyeB) || 8;
+  animateCircleR(eyeB, fromR, targetR, 500);
+
+  // === END overlay text po ~800ms od odpálení konce
+  const endText = root.querySelector("#m01__end_text");
+  if (endText) {
+    window.setTimeout(() => {
+      endText.classList.add("is-visible");
+    }, 800);
+  }
+}
+	
+	downAt = null;
   };
 
   window.addEventListener("pointerup", end, { signal });
@@ -901,6 +1172,78 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
         .padStart(6, "0")
     );
   }
+  
+  function maxCornerDistancePx(svgEl, circleEl) {
+  // střed kruhu v SVG souřadnicích (počítá i translate transform)
+  const cx0 = parseFloat(circleEl.getAttribute("cx") || "0");
+  const cy0 = parseFloat(circleEl.getAttribute("cy") || "0");
+  const tr = readTranslate(circleEl);
+  const cx = cx0 + tr.x;
+  const cy = cy0 + tr.y;
+
+  // převod SVG bodu -> screen(px)
+  const ctm = svgEl.getScreenCTM();
+  if (!ctm) return Math.hypot(window.innerWidth, window.innerHeight); // fallback
+
+  const pt = svgEl.createSVGPoint();
+  pt.x = cx;
+  pt.y = cy;
+  const scr = pt.matrixTransform(ctm); // {x,y} v px na obrazovce
+
+  // vzdálenost k rohům viewportu
+  const corners = [
+    { x: 0, y: 0 },
+    { x: window.innerWidth, y: 0 },
+    { x: 0, y: window.innerHeight },
+    { x: window.innerWidth, y: window.innerHeight },
+  ];
+
+  let maxD = 0;
+  for (const c of corners) {
+    const d = Math.hypot(c.x - scr.x, c.y - scr.y);
+    if (d > maxD) maxD = d;
+  }
+
+  return maxD + 24; // malá rezerva (klidně 0 / 40 / 80 dle pocitu)
+}
+  
+  function getCircleR(circleEl) {
+  const v = circleEl.getAttribute("r");
+  return v ? parseFloat(v) : 0;
+}
+
+// převede délku v pixelech (na obrazovce) do SVG jednotek (viewBox)
+// tak, aby se to chovalo správně i při resize / různém aspect ratio
+function pxToSvgLen(svgEl, px) {
+  const ctm = svgEl.getScreenCTM();
+  if (!ctm) return px;
+
+  const pt0 = svgEl.createSVGPoint();
+  const pt1 = svgEl.createSVGPoint();
+  pt0.x = 0;  pt0.y = 0;
+  pt1.x = px; pt1.y = 0;
+
+  const a = pt0.matrixTransform(ctm.inverse());
+  const b = pt1.matrixTransform(ctm.inverse());
+  return Math.hypot(b.x - a.x, b.y - a.y);
+}
+
+function animateCircleR(circleEl, fromR, toR, durMs = 500) {
+  const t0 = performance.now();
+
+  function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+
+  function tick(now) {
+    const t = Math.min(1, (now - t0) / durMs);
+    const k = easeInOutCubic(t);
+    const r = fromR + (toR - fromR) * k;
+    circleEl.setAttribute("r", String(r));
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
 
   function clientToSvg(svgEl, clientX, clientY) {
     const pt = svgEl.createSVGPoint();
