@@ -752,33 +752,52 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
   let postCompleteActive = false;
   let eyeActionsEnabled = true; // klik na oči (random/rotate)
   
-  function enterPostCompleteState() {
-	    // --- DŮLEŽITÉ: odemkni modul, jinak end() vždycky returnne
-  meetLocked = false;
+    // ======= timers (ať je můžeme čistě uklidit při abortu)
+  const timers = new Set();
+  const later = (fn, ms) => {
+    const id = window.setTimeout(() => {
+      timers.delete(id);
+      fn();
+    }, ms);
+    timers.add(id);
+    return id;
+  };
+  const clearAllTimers = () => {
+    for (const id of timers) window.clearTimeout(id);
+    timers.clear();
+  };
+  
+    function enterPostCompleteState() {
+    // odemkni modul, jinak end() vždycky returnne
+    meetLocked = false;
 
-  // --- a povol akce očí (random/rotate)
-  eyeActionsEnabled = true;
-  postCompleteActive = true;
+    // povol akce očí (random/rotate)
+    eyeActionsEnabled = true;
+    postCompleteActive = true;
 
-  // 3) oko B zpět na původní velikost
-  eyeB.setAttribute("r", isEyeOpen(eyeB) ? "8" : "0");
-  eyeD.setAttribute("r", isEyeOpen(eyeD) ? "8" : "0");
+    // oko B zpět na původní velikost (a D taky “normálně”)
+    eyeB.setAttribute("r", isEyeOpen(eyeB) ? "8" : "0");
+    eyeD.setAttribute("r", isEyeOpen(eyeD) ? "8" : "0");
 
-  // 1) B + D i s očima do středu (50,50 ve viewBox)
-  movePairCenterTo(blobB, eyeB, 30, 50);
-  movePairCenterTo(blobD, eyeD, 70, 50);
+    // B + D i s očima do středu viewBox (50,50)
+    movePairCenterTo(blobB, eyeB, 30, 50);
+    movePairCenterTo(blobD, eyeD, 70, 50);
 
-const c1 = root.querySelector("#m01__circles_bottom");
-c1?.setAttribute("display", "none");
+    // SCHOVEJ DVA KRUHY (ty tvoje "dva kruhy v clip path")
+    // jsou uvnitř g#m01__circles_bottom, takže to stačí shodit:
+    const circles = root.querySelector("#m01__circles_bottom");
+    circles?.setAttribute("display", "none");
 
-  // 4) texty pryč (clip path i závěrečný – vezmeme to „univerzálně“)
-  svg.querySelectorAll("text").forEach((t) => {
-    t.style.display = "none";
-  });
+    // texty pryč (clip path texty i závěrečný overlay)
+    svg.querySelectorAll("text").forEach((t) => {
+      t.setAttribute("display", "none");
+    });
 
-  // volitelně: kdyby byl finální text ve vlastní group a měl pointer-events none,
-  // nic tím nezkazíš – tohle je nejjistější
-}
+    // a schovej i celý overlay wrapper (ať nezůstane “prázdná” group)
+    const endOverlay = root.querySelector("#m01__end_text");
+    endOverlay?.setAttribute("display", "none");
+  }
+
 
 function movePairCenterTo(blob, eye, tx, ty) {
   const c = getEyeCenter(eye); // tuhle už máš
@@ -803,6 +822,10 @@ let eyeHoverTimer = null;
 function lockAfterMeet() {
   if (meetLocked) return;
   meetLocked = true;
+  // STOP pulse na D oku při setkání
+  const pulseD = root.querySelector("#m01__pulse_D");
+  try { pulseD?.endElement?.(); } catch {}
+
 
   // 1) B a D přestanou reagovat na hover/click (myš je neuvidí)
   blobB.style.pointerEvents = "none";
@@ -834,17 +857,16 @@ function lockAfterMeet() {
 
   // po 5000 ms hover zase povol
   window.clearTimeout(eyeHoverTimer);
-  eyeHoverTimer = window.setTimeout(() => {
-    eyeHoverSuppressed = false;
+  eyeHoverTimer = later(() => {
+  eyeHoverSuppressed = false;
 
-    // vrať řízení barvy na CSS
-    eyeB.style.fill = "";
-    eyeD.style.fill = "";
+  eyeB.style.fill = "";
+  eyeD.style.fill = "";
 
-    // úklid
-    eyeB.classList.remove("is-hover");
-    eyeD.classList.remove("is-hover");
-  }, 5000);
+  eyeB.classList.remove("is-hover");
+  eyeD.classList.remove("is-hover");
+}, 5000);
+
 }
   
     // ======= meetReady: když jsou oči otevřené a jejich středy se překryjí
@@ -1093,7 +1115,7 @@ if (meetReady && !meetExpandStarted) {
   meetExpandStarted = true;
     // dočasně vypni akce očí (random/rotate) jen po locku a jen na 5000ms
   eyeActionsEnabled = false;
-  window.setTimeout(() => {
+  later(() => {
     eyeActionsEnabled = true;
   }, 5000);
   lockAfterMeet();
@@ -1101,11 +1123,11 @@ if (meetReady && !meetExpandStarted) {
     // po 4000ms dokonči modul (ať engine načte další)
   // po 4000ms dokonči modul (ať engine načte další)
 if (typeof complete === "function") {
-  window.setTimeout(() => {
+  later(() => {
     try { complete(); } catch {}
 
     // cca 200ms po complete přepni modul do "dohrávacího" stavu
-    window.setTimeout(() => {
+    later(() => {
       try { enterPostCompleteState(); } catch {}
     }, 200);
 
@@ -1125,7 +1147,7 @@ if (typeof complete === "function") {
   // === END overlay text po ~800ms od odpálení konce
   const endText = root.querySelector("#m01__end_text");
   if (endText) {
-    window.setTimeout(() => {
+    later(() => {
       endText.classList.add("is-visible");
     }, 800);
   }
@@ -1266,5 +1288,8 @@ function animateCircleR(circleEl, fromR, toR, durMs = 500) {
   }
 
   // volitelně: cleanup (pokud engine někdy bude modul odpojovat/recyklovat)
-  return () => ac.abort();
+  return () => {
+    clearAllTimers();
+    ac.abort();
+  };
 }
