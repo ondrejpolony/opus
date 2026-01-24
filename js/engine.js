@@ -42,8 +42,15 @@ export function startLaborator() {
       })
     );
   }
+  
+  
+  startGlobalDisturber();
 
   const order = getOrCreateOrder(ALL_MODULES);
+  
+   if (DEV_UI) {
+    createDevModuleSwitcher(order);
+  }
 
   // activeIndex = index aktuálního modulu (0 = první)
   let activeIndex = getStoredIndex();
@@ -59,23 +66,19 @@ export function startLaborator() {
     return;
   }
 
-  // vyrenderuj všechny doposud "odkryté" moduly: 0..activeIndex
-  for (let i = 0; i <= activeIndex; i++) {
-    const isLast = i === activeIndex;
-
-    renderModule(app, order[i], {
-      onComplete: isLast ? () => completeCurrent(order, activeIndex, app, colors) : null,
-      devCompleteEnabled: isLast, // dokončovací tlačítko jen na aktivním modulu
-      colors,
-    });
-  }
+// vyrenderuj pouze aktivní modul (dokončené už nemají být vidět)
+renderModule(app, order[activeIndex], {
+  onComplete: (section) => completeCurrent(order, activeIndex, app, colors, section),
+  devCompleteEnabled: true,
+  colors,
+});
 
   // scroll na aktivní (poslední)
   const lastSection = app.querySelector("section[data-module]:last-of-type");
   if (lastSection) lastSection.scrollIntoView({ behavior: "auto", block: "start" });
 }
 
-function completeCurrent(order, activeIndex, app, colors) {
+function completeCurrent(order, activeIndex, app, colors, completedSection) {
   const nextIndex = activeIndex + 1;
 
   // dokončeny všechny -> reset + reload na začátek
@@ -87,16 +90,27 @@ function completeCurrent(order, activeIndex, app, colors) {
 
   setStoredIndex(nextIndex);
 
-  // vyrenderuj další modul a scrollni na něj
-  renderModule(app, order[nextIndex], {
-    onComplete: () => completeCurrent(order, nextIndex, app, colors),
+  // vyrenderuj další modul
+  const nextSection = renderModule(app, order[nextIndex], {
+    onComplete: (section) => completeCurrent(order, nextIndex, app, colors, section),
     devCompleteEnabled: true,
     colors,
   });
 
-  const lastSection = app.querySelector("section[data-module]:last-of-type");
-  if (lastSection) lastSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  // 1) scroll na další modul
+  nextSection.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  // 2) dokončený modul zmizí (odstraníme z DOM až po rozjezdu scrollu)
+  // Pozn.: čas je záměrně krátký, aby scroll „chytil“ nový section.
+  if (completedSection && completedSection.isConnected) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setTimeout(() => completedSection.remove(), 250);
+      });
+    });
+  }
 }
+
 
 function getOrCreateOrder(all) {
   // zkus načíst
@@ -177,17 +191,20 @@ function renderModule(app, mod, { onComplete, devCompleteEnabled, colors } = {})
 
   // DEV: dokonči modul (jen u aktivního)
   if (DEV_UI && devCompleteEnabled && typeof onComplete === "function") {
-    section.appendChild(createDevCompleteButton(() => onComplete()));
-  }
+  section.appendChild(createDevCompleteButton(() => onComplete(section)));
+}
 
   app.appendChild(section);
 
   // Spusť modul
   mod.fn({
-    root,
-    complete: () => onComplete?.(),
-    colors, // 👈 tady je to důležité
-  });
+  root,
+  complete: () => onComplete?.(section),
+  colors,
+});
+
+  // 👇 DŮLEŽITÉ: vracíme celý <section>, aby ho engine mohl později odstranit
+  return section;
 }
 
 /* =======================
@@ -432,6 +449,157 @@ function randomHex() {
   return "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0");
 }
 
+
+function startGlobalDisturber() {
+  // pojistka proti duplikaci
+  const old = document.getElementById("laborator-disturber");
+  if (old) old.remove();
+
+  const svgNS = "http://www.w3.org/2000/svg";
+
+  // Overlay SVG přes CELÝ viewport
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.id = "laborator-disturber";
+
+  Object.assign(svg.style, {
+    position: "fixed",
+    inset: "0",
+    width: "100vw",
+    height: "100vh",
+    zIndex: "9999999",
+    pointerEvents: "none",
+    opacity: "0.9",
+    // mixBlendMode: "difference", // můžeš zapnout pro větší "rušení"
+  });
+
+  // viewBox = pixelové souřadnice okna (body létají po celé obrazovce)
+  function setViewBox() {
+    const w = Math.max(1, window.innerWidth);
+    const h = Math.max(1, window.innerHeight);
+    svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  }
+  setViewBox();
+
+  // ---------- defs + pattern (transparentní bg, barva = secondaryColor) ----------
+  const defs = document.createElementNS(svgNS, "defs");
+
+  const pattern = document.createElementNS(svgNS, "pattern");
+  pattern.id = "op_001_pattern_A";
+  pattern.setAttribute("patternUnits", "userSpaceOnUse");
+  pattern.setAttribute("width", "10");
+  pattern.setAttribute("height", "10");
+  pattern.setAttribute("patternTransform", "rotate(-36)");
+  
+    // transparentní pozadí: rect není potřeba vůbec (necháme pattern "prázdný")
+
+  const dot = document.createElementNS(svgNS, "circle");
+  dot.setAttribute("cx", "7");
+  dot.setAttribute("cy", "7");
+  dot.setAttribute("r", "2");
+  // 👇 barva patternu = secondaryColor z CSS proměnné
+  dot.setAttribute("fill", "var(--secondaryColor)");
+
+  pattern.appendChild(dot);
+  defs.appendChild(pattern);
+  svg.appendChild(defs);
+
+  // ---------- polygon ----------
+  const poly = document.createElementNS(svgNS, "polygon");
+  poly.setAttribute("fill", "url(#op_001_pattern_A)");
+  poly.setAttribute("stroke", "none");
+  svg.appendChild(poly);
+
+  document.body.appendChild(svg);
+
+  // ---------- helpers ----------
+  function rand(min, max) {
+    return min + Math.random() * (max - min);
+  }
+  function setPoints(arr) {
+    poly.setAttribute(
+      "points",
+      arr.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")
+    );
+  }
+
+  // aktuální velikost viewportu (pro cíle bodů)
+  let vw = window.innerWidth;
+  let vh = window.innerHeight;
+
+  function updateSize() {
+    vw = Math.max(1, window.innerWidth);
+    vh = Math.max(1, window.innerHeight);
+    setViewBox();
+  }
+
+  window.addEventListener("resize", updateSize, { passive: true });
+
+  // ---------- počáteční body ----------
+  let pts = [
+    { x: vw * 0.5 - 80, y: vh * 0.5 - 60 },
+    { x: vw * 0.5 + 60, y: vh * 0.5 - 20 },
+    { x: vw * 0.5 - 40, y: vh * 0.5 + 70 },
+    { x: vw * 0.5 + 90, y: vh * 0.5 + 60 },
+  ];
+  setPoints(pts);
+
+  // ---------- LINEÁRNÍ nekonečné morfování ----------
+  // vždy nový target; žádná easing křivka, jen konstantní rychlost
+  let rafMorph = null;
+
+  let from = pts.map((p) => ({ ...p }));
+  let target = makeTarget();
+  let legMs = rand(3000, 4000);
+  let legStart = performance.now();
+
+  function makeTarget() {
+    const pad = 40;
+    const xMin = Math.max(0, pad);
+    const yMin = Math.max(0, pad);
+    const xMax = Math.max(xMin + 1, vw - pad);
+    const yMax = Math.max(yMin + 1, vh - pad);
+
+    return Array.from({ length: 4 }, () => ({
+      x: rand(xMin, xMax),
+      y: rand(yMin, yMax),
+    }));
+  }
+
+  function startNewLeg(now) {
+    from = pts.map((p) => ({ ...p }));
+    target = makeTarget();
+    legMs = rand(3000, 4000);
+    legStart = now;
+  }
+
+  function morphTick(now) {
+    const t = Math.min(1, (now - legStart) / legMs); // 👈 LINEÁRNÍ t
+
+    pts = from.map((p, i) => ({
+      x: p.x + (target[i].x - p.x) * t,
+      y: p.y + (target[i].y - p.y) * t,
+    }));
+
+    setPoints(pts);
+
+    if (t >= 1) startNewLeg(now);
+    rafMorph = requestAnimationFrame(morphTick);
+  }
+
+  rafMorph = requestAnimationFrame(morphTick);
+
+  // cleanup
+  return () => {
+    if (rafMorph) cancelAnimationFrame(rafMorph);
+    window.removeEventListener("resize", updateSize);
+    svg.remove();
+  };
+}
+
+
+
+
+
 /* =======================
    DEV UI buttons
    ======================= */
@@ -481,3 +649,57 @@ function createDevResetButton(onClick) {
 
   return btn;
 }
+
+function createDevModuleSwitcher(order) {
+  // pojistka proti duplicitě
+  const old = document.getElementById("dev-module-switcher");
+  if (old) old.remove();
+
+  const wrap = document.createElement("div");
+  wrap.id = "dev-module-switcher";
+
+  Object.assign(wrap.style, {
+    position: "fixed",
+    left: "12px",
+    top: "60px",
+    zIndex: "99999",
+    display: "flex",
+    flexDirection: "column",
+    gap: "6px",
+    padding: "8px",
+    background: "rgba(255,255,255,0.75)",
+    backdropFilter: "blur(4px)",
+    borderRadius: "10px",
+    border: "1px solid rgba(0,0,0,0.15)",
+    font: "12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif",
+  });
+
+  order.forEach((mod, index) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = mod.id;
+
+    Object.assign(btn.style, {
+      padding: "6px 8px",
+      borderRadius: "8px",
+      border: "1px solid rgba(0,0,0,0.2)",
+      background: "rgba(255,255,255,0.9)",
+      cursor: "pointer",
+      textAlign: "left",
+      whiteSpace: "nowrap",
+    });
+
+    btn.addEventListener("click", () => {
+      localStorage.setItem(LS_INDEX, String(index));
+      // DOM čistíme natvrdo
+      const app = document.getElementById("app");
+      if (app) app.innerHTML = "";
+      startLaborator();
+    });
+
+    wrap.appendChild(btn);
+  });
+
+  document.body.appendChild(wrap);
+}
+
