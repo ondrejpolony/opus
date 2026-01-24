@@ -10,6 +10,15 @@ export default function m01({ root, colors, complete }) {
 
   root.innerHTML = `
     <style>
+	
+	/* Mobil: drag objekty si berou gesto pro sebe */
+.draggable,
+.m01-eye {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+	
       /* Lokální styly jen pro tento modul */
       .m01-eye {
         fill: var(--primaryColor);
@@ -971,6 +980,7 @@ function lockAfterMeet() {
     "pointerdown",
     (e) => {
 		if (meetLocked) return;
+		e.preventDefault();
       activeDrag = "B";
       blobB.setPointerCapture?.(e.pointerId);
       startPt = clientToSvg(svg, e.clientX, e.clientY);
@@ -985,6 +995,7 @@ function lockAfterMeet() {
   eyeB.addEventListener(
     "pointerdown",
     (e) => {
+		e.preventDefault();
       activeDrag = "B_eye";
       eyeB.setPointerCapture?.(e.pointerId);
       startPt = clientToSvg(svg, e.clientX, e.clientY);
@@ -1001,6 +1012,7 @@ function lockAfterMeet() {
     "pointerdown",
     (e) => {
 		if (meetLocked) return;
+		e.preventDefault();
       activeDrag = "D";
       blobD.setPointerCapture?.(e.pointerId);
       startPt = clientToSvg(svg, e.clientX, e.clientY);
@@ -1015,6 +1027,7 @@ function lockAfterMeet() {
   eyeD.addEventListener(
     "pointerdown",
     (e) => {
+		e.preventDefault();
       activeDrag = "D_eye";
       eyeD.setPointerCapture?.(e.pointerId);
       startPt = clientToSvg(svg, e.clientX, e.clientY);
