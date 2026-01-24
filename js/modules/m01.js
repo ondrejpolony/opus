@@ -55,7 +55,7 @@ export default function m01({ root, colors, complete }) {
     <svg xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 100 100"
       preserveAspectRatio="xMidYMid meet"
-      style="display:block;width:100%;height:100%;touch-action:none;">
+      style="display:block;width:100%;height:100%;touch-action: pan-y pinch-zoom;">
 
       <defs>
         <!-- Pattern pro B (tečky) -->
