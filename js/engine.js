@@ -309,6 +309,22 @@ function createColorsController({ duration = 500 } = {}) {
         const d = Math.abs(a.h - b.h) % 360;
         return Math.min(d, 360 - d);
       }
+	  
+	  function findColorAgainstBoth({ againstA, againstB, min, tries }) {
+		for (let i = 0; i < tries; i++) {
+			const cand = hslToHex(
+				Math.random() * 360,
+				randInRange(satRange),
+				randInRange(lightRange)
+			);
+
+			if (contrastRatio(cand, againstA) >= min && contrastRatio(cand, againstB) >= min) {
+				return cand;
+			}
+		}
+		return null;
+	  }
+
 
       // bez kontrastu = hezký HSL random, ale držíme minLightDiff + minHueDiff
       if (!ensureContrast) {
@@ -424,6 +440,82 @@ function createColorsController({ duration = 500 } = {}) {
       next.tertiary = hslToHex(Math.random() * 360, randInRange(satRange), randInRange(lightRange));
       return api.set(next, opts);
     },
+	
+	// Vygeneruje JEDNU barvu tak, aby byla čitelná proti oběma zbylým barvám.
+// Použití: colors.randomizeOneSafe("primary", { min: 4.5 })
+randomizeOneSafe(which = "primary", opts = {}) {
+  const cur = api.get();
+
+  const key = String(which);
+  if (key !== "primary" && key !== "secondary" && key !== "tertiary") {
+    return cur;
+  }
+
+  const min = typeof opts.min === "number" ? opts.min : 2.0;
+  const tries = typeof opts.tries === "number" ? opts.tries : 1200;
+
+  // cílová barva má projít proti oběma ostatním
+  const againstA = key === "primary" ? cur.secondary : cur.primary;
+  const againstB = key === "tertiary" ? cur.secondary : cur.tertiary;
+
+  // využijeme stejný "look" jako randomize: HSL v satRange/lightRange
+  // ale dovolíme lokálně přebít rozsahy:
+  const satR = Array.isArray(opts.satRange) ? opts.satRange : [0.65, 1.0];
+  const lightR = Array.isArray(opts.lightRange) ? opts.lightRange : [0.25, 0.85];
+
+  function randInRangeLocal([a, b]) {
+    return a + Math.random() * (b - a);
+  }
+
+  let picked = null;
+
+  const minSteps = [
+    min,
+    Math.min(min, 4.5),
+    Math.min(min, 3.0),
+    Math.min(min, 2.0),
+  ];
+
+  const ranges = [
+    { sat: satR, light: lightR },
+    {
+      sat: [Math.max(0, satR[0] - 0.1), Math.min(1, satR[1] + 0.1)],
+      light: [0.10, 0.93],
+    },
+    {
+      sat: [0.35, 1.0],
+      light: [0.05, 0.97],
+    },
+  ];
+
+  for (const minTry of minSteps) {
+    for (const rg of ranges) {
+      for (let i = 0; i < tries; i++) {
+        const cand = hslToHex(
+          Math.random() * 360,
+          randInRangeLocal(rg.sat),
+          randInRangeLocal(rg.light)
+        );
+
+        if (
+          contrastRatio(cand, againstA) >= minTry &&
+          contrastRatio(cand, againstB) >= minTry
+        ) {
+          picked = cand;
+          break;
+        }
+      }
+      if (picked) break;
+    }
+    if (picked) break;
+  }
+
+  if (!picked) return cur;
+
+  return api.set({ [key]: picked }, opts);
+
+},
+
 
     // rotate(1): [p,s,t] -> [t,p,s]
     rotate(steps = 1, opts = {}) {

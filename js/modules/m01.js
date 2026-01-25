@@ -758,7 +758,6 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
   const isEyeOpen = (eye) => eye.dataset.open === "1";
   let clipAnimStarted = false;
   let meetExpandStarted = false;
-  let postCompleteActive = false;
   let eyeActionsEnabled = true; // klik na oči (random/rotate)
   
     // ======= timers (ať je můžeme čistě uklidit při abortu)
@@ -776,53 +775,8 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
     timers.clear();
   };
   
-    function enterPostCompleteState() {
-    // odemkni modul, jinak end() vždycky returnne
-    meetLocked = false;
 
-    // povol akce očí (random/rotate)
-    eyeActionsEnabled = true;
-    postCompleteActive = true;
-
-    // oko B zpět na původní velikost (a D taky “normálně”)
-    eyeB.setAttribute("r", isEyeOpen(eyeB) ? "8" : "0");
-    eyeD.setAttribute("r", isEyeOpen(eyeD) ? "8" : "0");
-
-    // B + D i s očima do středu viewBox (50,50)
-    movePairCenterTo(blobB, eyeB, 30, 50);
-    movePairCenterTo(blobD, eyeD, 70, 50);
-
-    // SCHOVEJ DVA KRUHY (ty tvoje "dva kruhy v clip path")
-    // jsou uvnitř g#m01__circles_bottom, takže to stačí shodit:
-    const circles = root.querySelector("#m01__circles_bottom");
-    circles?.setAttribute("display", "none");
-
-    // texty pryč (clip path texty i závěrečný overlay)
-    svg.querySelectorAll("text").forEach((t) => {
-      t.setAttribute("display", "none");
-    });
-
-    // a schovej i celý overlay wrapper (ať nezůstane “prázdná” group)
-    const endOverlay = root.querySelector("#m01__end_text");
-    endOverlay?.setAttribute("display", "none");
-  }
-
-
-function movePairCenterTo(blob, eye, tx, ty) {
-  const c = getEyeCenter(eye); // tuhle už máš
-  const dx = tx - c.x;
-  const dy = ty - c.y;
-
-  const tb = readTranslate(blob);
-  const te = readTranslate(eye);
-
-  const nx = tb.x + dx;
-  const ny = tb.y + dy;
-
-  writeTranslate(blob, nx, ny);
-  writeTranslate(eye, nx, ny);
-}
-  
+ 
   let eyeHoverSuppressed = false;
 let eyeHoverTimer = null;
   
@@ -1044,7 +998,6 @@ function lockAfterMeet() {
     "pointermove",
     (e) => {
       if (meetLocked) return;
-	  if (postCompleteActive) return;
       if (!activeDrag || !startPt) return;
 
       const p = clientToSvg(svg, e.clientX, e.clientY);
@@ -1112,8 +1065,14 @@ function lockAfterMeet() {
 
 // klik na oko: akce (jen když je otevřené) + jen když jsou akce povolené
 if (was === "B_eye" && isEyeOpen(eyeB) && eyeActionsEnabled) {
-  setPrimaryColor(randomHex());
+  if (colors && typeof colors.randomizeOneSafe === "function") {
+    colors.randomizeOneSafe("primary", { min: 1.5, duration: 500 });
+  } else {
+    // fallback (když běží bez controlleru)
+    setPrimaryColor(randomHex());
+  }
 }
+
 if (was === "D_eye" && isEyeOpen(eyeD) && eyeActionsEnabled) {
   rotateProjectColors();
 }
@@ -1139,10 +1098,6 @@ if (typeof complete === "function") {
   later(() => {
     try { complete(); } catch {}
 
-    // cca 200ms po complete přepni modul do "dohrávacího" stavu
-    later(() => {
-      try { enterPostCompleteState(); } catch {}
-    }, 200);
 
   }, 4000);
 }
