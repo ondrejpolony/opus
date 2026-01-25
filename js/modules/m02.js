@@ -5,6 +5,8 @@ export default function m02({ root, colors, complete }) {
 
   const ROWS = 12;
   const COLS = 12;
+  const EXTRA_COLS = 1;
+  const TOTAL_COLS = COLS + EXTRA_COLS; // 13
 
   const TEXT_INTERVAL = 200;
   const DECAY_INTERVAL = 30;
@@ -36,7 +38,8 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
 
   root.innerHTML = `
     <style>
-			        @import url('https://fonts.googleapis.com/css2?family=Rubik+Burned&family=Rubik+Glitch&family=Rubik+Dirt&family=Share+Tech+Mono&family=IBM+Plex+Mono:wght@400;700&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Rubik+Burned&family=Rubik+Glitch&family=Rubik+Dirt&family=Share+Tech+Mono&family=IBM+Plex+Mono:wght@400;700&display=swap');
+
       #m02{
         width: 100%;
         height: 100%;
@@ -50,30 +53,49 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
       }
 
       #m02 table{
-        border-collapse: collapse;
-        table-layout: fixed;
-        width: 90vmin;
-        height: 90vmin;
-      }
+  border-collapse: collapse;
+  table-layout: fixed;
 
-      #m02 td{
-        width: calc(90vmin / ${COLS});
-        height: calc(90vmin / ${ROWS});
+  /* výška = 90% kratší strany */
+  height: 90vmin;
 
-        text-align: center;
-        user-select: none;
-        border: none;
+  /* šířka odpovídá počtu sloupců (13) */
+  width: calc(90vmin * (${TOTAL_COLS} / ${ROWS}));
+}
 
-        color: var(--secondaryColor);                 /* ✅ písmena */
-        font-size: calc((90vmin / ${COLS}) * 0.62);
-        line-height: 1;
+#m02 td{
+  /* buňka je čtverec podle výšky */
+  width: calc(90vmin / ${ROWS});
+  height: calc(90vmin / ${ROWS});
 
-        will-change: transform, letter-spacing, filter, opacity;
-        cursor: default;
-      }
+  text-align: center;
+  user-select: none;
+  border: none;
+
+  color: var(--secondaryColor);
+  font-size: calc((90vmin / ${ROWS}) * 0.62);
+  line-height: 1;
+
+  will-change: transform, letter-spacing, filter, opacity;
+  cursor: default;
+}
+
+/* pravý speciální sloupec */
+#m02 td.m02-side{
+  padding: 0;
+  background: transparent;
+}
+
+/* linky mezi řádky v pravém sloupci */
+#m02 td.m02-side{
+  border-top: 1px solid var(--secondaryColor);
+}
+#m02 tr:first-child td.m02-side{
+  border-top: none; /* první bez horní linky */
+}
 
       #m02 td.is-e{
-        background: var(--primaryColor);              /* ✅ pozadí É */
+        background: var(--primaryColor);
         cursor: pointer;
       }
 
@@ -95,7 +117,7 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
         75%{transform:translate(-1px,-1px)}
         100%{transform:translate(0,0)}
       }
-	</style>
+    </style>
 
     <div id="m02">
       <div class="stage">
@@ -122,13 +144,28 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
   // polyline path saved as list of cells for resize-safe rebuild
   const ePathCells = []; // [{r,c}]
   let polyline = null;
+  
+    // === pravý (13.) sloupec: postupné barvení odspodu ===
+  const sideCells = new Array(ROWS);
+  let sideFill = ROWS - 1; // začínáme úplně dole
+
+  // === počítání kliků na É ===
+  let eClicks = 0;
+
+  function paintNextSideCell() {
+    if (sideFill < 0) return; // už jsme došli nahoru
+    const td = sideCells[sideFill];
+    if (td) td.style.background = "var(--primaryColor)";
+    sideFill -= 1;
+  }
+
 
   function ensurePolyline() {
     if (polyline) return;
     polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
     polyline.setAttribute("fill", "none");
-    polyline.setAttribute("stroke", "var(--secondaryColor)"); // ✅ linka
-    polyline.setAttribute("stroke-width", "1");
+    polyline.setAttribute("stroke", "var(--primaryColor)"); // ✅ linka = primary
+    polyline.setAttribute("stroke-width", "2");
     polyline.setAttribute("stroke-linecap", "round");
     polyline.setAttribute("stroke-linejoin", "round");
     polyline.setAttribute("opacity", "0.9");
@@ -173,6 +210,9 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
   }
   function randomFont() {
     return FONTS[Math.floor(Math.random() * FONTS.length)];
+  }
+  function randomHex() {
+    return "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0");
   }
 
   function nextCharFromText() {
@@ -280,51 +320,70 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
   for (let r = 0; r < ROWS; r++) {
     const tr = document.createElement("tr");
     for (let c = 0; c < COLS; c++) {
-      const td = document.createElement("td");
-      td.textContent = randomLetter();
-      td.style.fontFamily = randomFont();
-      td.dataset.r = String(r);
-      td.dataset.c = String(c);
+  const td = document.createElement("td");
+  td.textContent = randomLetter();
+  td.style.fontFamily = randomFont();
+  td.dataset.r = String(r);
+  td.dataset.c = String(c);
 
-      td.addEventListener("click", () => {
-        const rr = Number(td.dataset.r);
-        const cc = Number(td.dataset.c);
-        const k = keyOf(rr, cc);
+  td.addEventListener("click", () => {
+    const rr = Number(td.dataset.r);
+    const cc = Number(td.dataset.c);
+    const k = keyOf(rr, cc);
 
-        // klik funguje jen na zvýrazněnou (É) buňku
-        if (!td.classList.contains("is-e")) return;
+    if (!td.classList.contains("is-e")) return;
 
-        // 1) vyřadit buňku
-        disabled.add(k);
+    disabled.add(k);
 
-        td.textContent = "";
-        td.classList.remove("shake", "is-e");
-        td.style.backgroundColor = "";
-        td.style.cursor = "default";
-        td.style.filter = "";
-        td.style.opacity = "";
-        td.style.letterSpacing = "";
-        td.style.transform = "";
+    td.textContent = "";
+    td.classList.remove("shake", "is-e");
+    td.style.backgroundColor = "";
+    td.style.cursor = "default";
+    td.style.filter = "";
+    td.style.opacity = "";
+    td.style.letterSpacing = "";
+    td.style.transform = "";
+	
+	        // 1) obarvi další buňku v 13. sloupci (odspodu nahoru)
+        paintNextSideCell();
 
-        // 2) rotace barev projektu
-        if (colors && typeof colors.rotate === "function") {
-          colors.rotate(1); // ✅ v enginu animuje CSS vars
-        } else {
-          // fallback: prostá rotace CSS vars (bez persistence)
-          const rEl = document.documentElement;
-          const cs = getComputedStyle(rEl);
-          const p = cs.getPropertyValue("--primaryColor").trim();
-          const s = cs.getPropertyValue("--secondaryColor").trim();
-          const t = cs.getPropertyValue("--tertiaryColor").trim();
-          rEl.style.setProperty("--primaryColor", t);
-          rEl.style.setProperty("--secondaryColor", p);
-          rEl.style.setProperty("--tertiaryColor", s);
-        }
-      }, { signal });
+        // počítání kliků na É
+        eClicks += 1;
 
-      tr.appendChild(td);
-    }
-    table.appendChild(tr);
+
+    // 2) náhodná změna barvy (primary)
+if (colors) {
+  if (typeof colors.randomize === "function") {
+    colors.randomize({ primary: true }, { duration: 500 });
+  } else if (typeof colors.set === "function") {
+    colors.set({ primary: randomHex() }, { duration: 500 });
+  } else {
+    document.documentElement.style.setProperty("--primaryColor", randomHex());
+  }
+} else {
+  document.documentElement.style.setProperty("--primaryColor", randomHex());
+}
+
+// 3) po každých 4 kliknutích na É rotace barev
+if (colors && typeof colors.rotate === "function" && eClicks % 4 === 0) {
+  colors.rotate(1, { duration: 500 });
+}
+  }, { signal });
+
+  tr.appendChild(td);
+}
+
+/* ✅ extra pravý sloupec – bez textu, bez dataset, bez kliků */
+const side = document.createElement("td");
+side.className = "m02-side";
+side.textContent = "";
+tr.appendChild(side);
+
+      // ✅ uložíme referenci (podle řádku r)
+      sideCells[r] = side;
+
+table.appendChild(tr);
+
   }
 
   syncOverlaySize();
