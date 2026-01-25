@@ -30,25 +30,29 @@ export function startLaborator() {
 
   app.innerHTML = "";
 
-  // Color controller (globální stav barev) — teď s plynulou animací CSS vars
+  // Color controller (globální stav barev) — plynulá animace CSS vars
   const colors = createColorsController({ duration: 500 });
 
   // Dev reset button (globální)
   if (DEV_UI) {
-    document.body.appendChild(
-      createDevResetButton(() => {
-        resetProgress();
-        window.location.reload();
-      })
-    );
+    const old = document.getElementById("dev-reset");
+    if (old) old.remove();
+
+    const btn = createDevResetButton(() => {
+      resetProgress();
+      window.location.reload();
+    });
+    btn.id = "dev-reset";
+    document.body.appendChild(btn);
   }
-  
-  
+
+  // Globální rušič (nad vším)
   startGlobalDisturber();
 
   const order = getOrCreateOrder(ALL_MODULES);
-  
-   if (DEV_UI) {
+
+  // DEV: přepínač modulů
+  if (DEV_UI) {
     createDevModuleSwitcher(order);
   }
 
@@ -57,25 +61,20 @@ export function startLaborator() {
 
   // pojistky
   if (activeIndex < 0) activeIndex = 0;
-  if (activeIndex > order.length) activeIndex = 0;
+  if (activeIndex >= order.length) activeIndex = 0;
 
-  // Pokud už by byl za koncem (nemělo by nastat), reset
-  if (activeIndex >= order.length) {
-    resetProgress();
-    window.location.reload();
-    return;
+  // vyrenderuj pouze aktivní modul (dokončené nemají být vidět)
+  const activeSection = renderModule(app, order[activeIndex], {
+    onComplete: (section) =>
+      completeCurrent(order, activeIndex, app, colors, section),
+    devCompleteEnabled: true,
+    colors,
+  });
+
+  // scroll na aktivní
+  if (activeSection) {
+    activeSection.scrollIntoView({ behavior: "auto", block: "start" });
   }
-
-// vyrenderuj pouze aktivní modul (dokončené už nemají být vidět)
-renderModule(app, order[activeIndex], {
-  onComplete: (section) => completeCurrent(order, activeIndex, app, colors, section),
-  devCompleteEnabled: true,
-  colors,
-});
-
-  // scroll na aktivní (poslední)
-  const lastSection = app.querySelector("section[data-module]:last-of-type");
-  if (lastSection) lastSection.scrollIntoView({ behavior: "auto", block: "start" });
 }
 
 function completeCurrent(order, activeIndex, app, colors, completedSection) {
@@ -92,7 +91,8 @@ function completeCurrent(order, activeIndex, app, colors, completedSection) {
 
   // vyrenderuj další modul
   const nextSection = renderModule(app, order[nextIndex], {
-    onComplete: (section) => completeCurrent(order, nextIndex, app, colors, section),
+    onComplete: (section) =>
+      completeCurrent(order, nextIndex, app, colors, section),
     devCompleteEnabled: true,
     colors,
   });
@@ -100,8 +100,7 @@ function completeCurrent(order, activeIndex, app, colors, completedSection) {
   // 1) scroll na další modul
   nextSection.scrollIntoView({ behavior: "smooth", block: "start" });
 
-  // 2) dokončený modul zmizí (odstraníme z DOM až po rozjezdu scrollu)
-  // Pozn.: čas je záměrně krátký, aby scroll „chytil“ nový section.
+  // 2) dokončený modul zmizí (remove po rozjezdu scrollu)
   if (completedSection && completedSection.isConnected) {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -110,7 +109,6 @@ function completeCurrent(order, activeIndex, app, colors, completedSection) {
     });
   }
 }
-
 
 function getOrCreateOrder(all) {
   // zkus načíst
@@ -191,26 +189,26 @@ function renderModule(app, mod, { onComplete, devCompleteEnabled, colors } = {})
 
   // DEV: dokonči modul (jen u aktivního)
   if (DEV_UI && devCompleteEnabled && typeof onComplete === "function") {
-  section.appendChild(createDevCompleteButton(() => onComplete(section)));
-}
+    section.appendChild(createDevCompleteButton(() => onComplete(section)));
+  }
 
   app.appendChild(section);
 
   // Spusť modul
   mod.fn({
-  root,
-  complete: () => onComplete?.(section),
-  colors,
-});
+    root,
+    complete: () => onComplete?.(section),
+    colors,
+  });
 
-  // 👇 DŮLEŽITÉ: vracíme celý <section>, aby ho engine mohl později odstranit
   return section;
 }
 
 /* =======================
    COLOR CONTROLLER (plynulá rotace)
-   - animuje změny přes CSS vars (pro celý projekt: pozadí, tečky, patterny, atd.)
+   - animuje změny přes CSS vars (pro celý projekt)
    - persistuje finální stav po doběhnutí animace
+   - randomize umí HSL + minimální kontrast + minimální rozdíl odstínu
    ======================= */
 
 function createColorsController({ duration = 500 } = {}) {
@@ -236,7 +234,9 @@ function createColorsController({ duration = 500 } = {}) {
 
     // set(next, { duration, animate })
     set(next = {}, opts = {}) {
-      const nextState = normalizeColors({ ...state, ...next }) || { ...DEFAULT_COLORS };
+      const nextState = normalizeColors({ ...state, ...next }) || {
+        ...DEFAULT_COLORS,
+      };
 
       const dur = typeof opts.duration === "number" ? opts.duration : duration;
       const animate = opts.animate !== false && dur > 0;
@@ -262,11 +262,166 @@ function createColorsController({ duration = 500 } = {}) {
       return api.set({ ...DEFAULT_COLORS }, opts);
     },
 
-    randomize({ primary = false, secondary = false, tertiary = false } = {}, opts = {}) {
+    // HSL randomize + volitelný minimální kontrast + minimální "odlišnost"
+    randomize(
+      {
+        primary = false,
+        secondary = false,
+        tertiary = false,
+        ensureContrast = false,
+
+        satRange = [0.65, 1.0],
+        lightRange = [0.25, 0.85],
+
+        // minimální rozdíl světlosti v HSL (jen rychlá pojistka)
+        minLightDiff = 0.28,
+
+        // minimální rozdíl odstínu (Hue) v ° — hlavní "odlišnost"
+        minHueDiff = 80,
+
+        // minimální kontrasty (doporučené pro 3 barevné barvy)
+        minPS = 4.5,
+        minST = 4.5,
+        minPT = 4.5,
+
+        // minimální rozdíl relativní luminance (extra pojistka proti "podobnosti")
+        minLumDiff = 0.26,
+      } = {},
+      opts = {}
+    ) {
+      function randInRange([a, b]) {
+        return a + Math.random() * (b - a);
+      }
+
+      function genHsl() {
+        return {
+          h: Math.random() * 360,
+          s: randInRange(satRange),
+          l: randInRange(lightRange),
+        };
+      }
+
+      function tooCloseL(a, b) {
+        return Math.abs(a.l - b.l) < minLightDiff;
+      }
+
+      function hueDist(a, b) {
+        const d = Math.abs(a.h - b.h) % 360;
+        return Math.min(d, 360 - d);
+      }
+
+      // bez kontrastu = hezký HSL random, ale držíme minLightDiff + minHueDiff
+      if (!ensureContrast) {
+        const next = { ...state };
+
+        let A = genHsl();
+        let B = genHsl();
+        let C = genHsl();
+
+        let guard = 0;
+        while (
+          (tooCloseL(A, B) ||
+            tooCloseL(B, C) ||
+            tooCloseL(A, C) ||
+            hueDist(A, B) < minHueDiff ||
+            hueDist(B, C) < minHueDiff ||
+            hueDist(A, C) < minHueDiff) &&
+          guard++ < 200
+        ) {
+          B = genHsl();
+          C = genHsl();
+        }
+
+        if (primary) next.primary = hslToHex(A.h, A.s, A.l);
+        if (secondary) next.secondary = hslToHex(B.h, B.s, B.l);
+        if (tertiary) next.tertiary = hslToHex(C.h, C.s, C.l);
+        return api.set(next, opts);
+      }
+
+      // ensureContrast = generuj dokud neprojde kontrast + světlost + hue
+      const maxTries = 1200;
+      for (let i = 0; i < maxTries; i++) {
+        const next = { ...state };
+
+        // vždy generuj 3 HSL kandidáty (když nechceš měnit některou barvu, nastav primary/secondary/tertiary true)
+        const A = genHsl();
+        const B = genHsl();
+        const C = genHsl();
+
+        // 0) odlišnost odstínů
+        if (
+          hueDist(A, B) < minHueDiff ||
+          hueDist(B, C) < minHueDiff ||
+          hueDist(A, C) < minHueDiff
+        )
+          continue;
+
+        // 0b) odlišnost světlosti v HSL
+        if (tooCloseL(A, B) || tooCloseL(B, C) || tooCloseL(A, C)) continue;
+
+        const hexP = hslToHex(A.h, A.s, A.l);
+        const hexS = hslToHex(B.h, B.s, B.l);
+        const hexT = hslToHex(C.h, C.s, C.l);
+
+        // 1) kontrastní testy
+        const ps = contrastRatio(hexP, hexS);
+        const st = contrastRatio(hexS, hexT);
+        const pt = contrastRatio(hexP, hexT);
+        if (ps < minPS || st < minST || pt < minPT) continue;
+
+        // 2) luminance distance (pojistka "podobnosti")
+        const Lp = relLuminance(hexToRgb(hexP));
+        const Ls = relLuminance(hexToRgb(hexS));
+        const Lt = relLuminance(hexToRgb(hexT));
+        if (
+          Math.abs(Lp - Ls) < minLumDiff ||
+          Math.abs(Ls - Lt) < minLumDiff ||
+          Math.abs(Lp - Lt) < minLumDiff
+        )
+          continue;
+
+        // prošlo -> zapiš (všechno barevné)
+        next.primary = hexP;
+        next.secondary = hexS;
+        next.tertiary = hexT;
+
+        return api.set(next, opts);
+      }
+
+      // fallback (stále barevné): zkus mírnější pravidla, ale zachovej hue rozdíl
+      for (let i = 0; i < 1200; i++) {
+        const next = { ...state };
+        const A = genHsl();
+        const B = genHsl();
+        const C = genHsl();
+
+        if (
+          hueDist(A, B) < Math.max(50, minHueDiff - 20) ||
+          hueDist(B, C) < Math.max(50, minHueDiff - 20) ||
+          hueDist(A, C) < Math.max(50, minHueDiff - 20)
+        )
+          continue;
+
+        const hexP = hslToHex(A.h, A.s, A.l);
+        const hexS = hslToHex(B.h, B.s, B.l);
+        const hexT = hslToHex(C.h, C.s, C.l);
+
+        const ps = contrastRatio(hexP, hexS);
+        const st = contrastRatio(hexS, hexT);
+        const pt = contrastRatio(hexP, hexT);
+        if (ps < 3.0 || st < 3.0 || pt < 3.0) continue;
+
+        next.primary = hexP;
+        next.secondary = hexS;
+        next.tertiary = hexT;
+        return api.set(next, opts);
+      }
+
+      // úplně poslední nouze: čistý HSL random (3 barevné, bez garancí)
       const next = { ...state };
-      if (primary) next.primary = randomHex();
-      if (secondary) next.secondary = randomHex();
-      if (tertiary) next.tertiary = randomHex();
+      next.primary = hslToHex(Math.random() * 360, randInRange(satRange), randInRange(lightRange));
+      next.secondary = hslToHex(Math.random() * 360, randInRange(satRange), randInRange(lightRange));
+      next.tertiary = hslToHex(Math.random() * 360, randInRange(satRange), randInRange(lightRange));
       return api.set(next, opts);
     },
 
@@ -286,7 +441,6 @@ function createColorsController({ duration = 500 } = {}) {
         next = { primary: sec, secondary: t, tertiary: p };
       }
 
-      // defaultně chceme 500ms (nebo duration z controlleru)
       return api.set(next, opts);
     },
   };
@@ -339,7 +493,6 @@ function createColorsController({ duration = 500 } = {}) {
         raf = requestAnimationFrame(tick);
       } else {
         raf = null;
-        // na konci nastav přesně cílový stav (kvůli zaokrouhlení) a persist
         applyColorsToCss(state);
         if (pendingPersist) persist();
         pendingPersist = false;
@@ -349,7 +502,6 @@ function createColorsController({ duration = 500 } = {}) {
     raf = requestAnimationFrame(tick);
   }
 
-  // okamžité přečtení aktuálních CSS vars
   function readCssVars() {
     const r = document.documentElement;
     const cs = getComputedStyle(r);
@@ -379,7 +531,6 @@ function normalizeColors(obj) {
 
   if (!primary || !secondary || !tertiary) return null;
 
-  // minimální "normalizace" na #RRGGBB (kvůli interpolaci)
   const p = normalizeHex(primary);
   const s = normalizeHex(secondary);
   const t = normalizeHex(tertiary);
@@ -391,15 +542,17 @@ function normalizeColors(obj) {
 function normalizeHex(hex) {
   const h = (hex || "").trim();
 
-  // #rgb -> #rrggbb
   const m3 = h.match(/^#([0-9a-f]{3})$/i);
   if (m3) {
     const x = m3[1];
     return (
       "#" +
-      x[0] + x[0] +
-      x[1] + x[1] +
-      x[2] + x[2]
+      x[0] +
+      x[0] +
+      x[1] +
+      x[1] +
+      x[2] +
+      x[2]
     ).toLowerCase();
   }
 
@@ -445,19 +598,72 @@ function clamp255(x) {
   return Math.max(0, Math.min(255, x));
 }
 
-function randomHex() {
-  return "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0");
+/* =======================
+   HSL + kontrast helpery
+   ======================= */
+
+function hslToRgb(h, s, l) {
+  h = ((h % 360) + 360) % 360;
+  s = clamp01(s);
+  l = clamp01(l);
+
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const hp = h / 60;
+  const x = c * (1 - Math.abs((hp % 2) - 1));
+
+  let r1 = 0,
+    g1 = 0,
+    b1 = 0;
+  if (hp >= 0 && hp < 1) [r1, g1, b1] = [c, x, 0];
+  else if (hp < 2) [r1, g1, b1] = [x, c, 0];
+  else if (hp < 3) [r1, g1, b1] = [0, c, x];
+  else if (hp < 4) [r1, g1, b1] = [0, x, c];
+  else if (hp < 5) [r1, g1, b1] = [x, 0, c];
+  else [r1, g1, b1] = [c, 0, x];
+
+  const m = l - c / 2;
+  return {
+    r: Math.round((r1 + m) * 255),
+    g: Math.round((g1 + m) * 255),
+    b: Math.round((b1 + m) * 255),
+  };
 }
 
+function hslToHex(h, s, l) {
+  return rgbToHex(hslToRgb(h, s, l));
+}
+
+function relLuminance({ r, g, b }) {
+  const srgb = [r, g, b]
+    .map((v) => v / 255)
+    .map((c) =>
+      c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+    );
+  return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
+}
+
+function contrastRatio(hexA, hexB) {
+  const a = relLuminance(hexToRgb(hexA));
+  const b = relLuminance(hexToRgb(hexB));
+  const L1 = Math.max(a, b);
+  const L2 = Math.min(a, b);
+  return (L1 + 0.05) / (L2 + 0.05);
+}
+
+/* =======================
+   GLOBAL DISTURBER (rušič)
+   - fixed SVG přes celý viewport
+   - tvar se nehýbe; pohyb dělají jen 4 body polygonu
+   - lineární (bez ease)
+   - pattern: transparent bg, tečky = secondaryColor
+   ======================= */
 
 function startGlobalDisturber() {
-  // pojistka proti duplikaci
   const old = document.getElementById("laborator-disturber");
   if (old) old.remove();
 
   const svgNS = "http://www.w3.org/2000/svg";
 
-  // Overlay SVG přes CELÝ viewport
   const svg = document.createElementNS(svgNS, "svg");
   svg.id = "laborator-disturber";
 
@@ -469,10 +675,9 @@ function startGlobalDisturber() {
     zIndex: "9999999",
     pointerEvents: "none",
     opacity: "0.9",
-    // mixBlendMode: "difference", // můžeš zapnout pro větší "rušení"
+    // mixBlendMode: "difference",
   });
 
-  // viewBox = pixelové souřadnice okna (body létají po celé obrazovce)
   function setViewBox() {
     const w = Math.max(1, window.innerWidth);
     const h = Math.max(1, window.innerHeight);
@@ -480,7 +685,6 @@ function startGlobalDisturber() {
   }
   setViewBox();
 
-  // ---------- defs + pattern (transparentní bg, barva = secondaryColor) ----------
   const defs = document.createElementNS(svgNS, "defs");
 
   const pattern = document.createElementNS(svgNS, "pattern");
@@ -489,21 +693,23 @@ function startGlobalDisturber() {
   pattern.setAttribute("width", "10");
   pattern.setAttribute("height", "10");
   pattern.setAttribute("patternTransform", "rotate(-36)");
-  
-    // transparentní pozadí: rect není potřeba vůbec (necháme pattern "prázdný")
 
   const dot = document.createElementNS(svgNS, "circle");
   dot.setAttribute("cx", "7");
   dot.setAttribute("cy", "7");
   dot.setAttribute("r", "2");
-  // 👇 barva patternu = secondaryColor z CSS proměnné
-  dot.setAttribute("fill", "var(--secondaryColor)");
+
+  const style = document.createElementNS(svgNS, "style");
+  style.textContent = `
+    #laborator-disturber .opA-dot { fill: var(--secondaryColor); }
+  `;
+  dot.setAttribute("class", "opA-dot");
 
   pattern.appendChild(dot);
   defs.appendChild(pattern);
   svg.appendChild(defs);
+  svg.appendChild(style);
 
-  // ---------- polygon ----------
   const poly = document.createElementNS(svgNS, "polygon");
   poly.setAttribute("fill", "url(#op_001_pattern_A)");
   poly.setAttribute("stroke", "none");
@@ -511,10 +717,10 @@ function startGlobalDisturber() {
 
   document.body.appendChild(svg);
 
-  // ---------- helpers ----------
   function rand(min, max) {
     return min + Math.random() * (max - min);
   }
+
   function setPoints(arr) {
     poly.setAttribute(
       "points",
@@ -522,7 +728,6 @@ function startGlobalDisturber() {
     );
   }
 
-  // aktuální velikost viewportu (pro cíle bodů)
   let vw = window.innerWidth;
   let vh = window.innerHeight;
 
@@ -531,10 +736,9 @@ function startGlobalDisturber() {
     vh = Math.max(1, window.innerHeight);
     setViewBox();
   }
-
   window.addEventListener("resize", updateSize, { passive: true });
 
-  // ---------- počáteční body ----------
+  // počáteční body
   let pts = [
     { x: vw * 0.5 - 80, y: vh * 0.5 - 60 },
     { x: vw * 0.5 + 60, y: vh * 0.5 - 20 },
@@ -543,8 +747,6 @@ function startGlobalDisturber() {
   ];
   setPoints(pts);
 
-  // ---------- LINEÁRNÍ nekonečné morfování ----------
-  // vždy nový target; žádná easing křivka, jen konstantní rychlost
   let rafMorph = null;
 
   let from = pts.map((p) => ({ ...p }));
@@ -573,7 +775,7 @@ function startGlobalDisturber() {
   }
 
   function morphTick(now) {
-    const t = Math.min(1, (now - legStart) / legMs); // 👈 LINEÁRNÍ t
+    const t = Math.min(1, (now - legStart) / legMs); // LINEÁRNĚ
 
     pts = from.map((p, i) => ({
       x: p.x + (target[i].x - p.x) * t,
@@ -588,7 +790,6 @@ function startGlobalDisturber() {
 
   rafMorph = requestAnimationFrame(morphTick);
 
-  // cleanup
   return () => {
     if (rafMorph) cancelAnimationFrame(rafMorph);
     window.removeEventListener("resize", updateSize);
@@ -596,12 +797,8 @@ function startGlobalDisturber() {
   };
 }
 
-
-
-
-
 /* =======================
-   DEV UI buttons
+   DEV UI buttons + switcher
    ======================= */
 
 function createDevCompleteButton(onClick) {
@@ -621,7 +818,8 @@ function createDevCompleteButton(onClick) {
   btn.style.color = "#000";
   btn.style.cursor = "pointer";
   btn.style.userSelect = "none";
-  btn.style.font = "12px/1.1 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif";
+  btn.style.font =
+    "12px/1.1 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif";
   btn.style.webkitTapHighlightColor = "transparent";
 
   return btn;
@@ -644,14 +842,14 @@ function createDevResetButton(onClick) {
   btn.style.color = "#000";
   btn.style.cursor = "pointer";
   btn.style.userSelect = "none";
-  btn.style.font = "12px/1.1 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif";
+  btn.style.font =
+    "12px/1.1 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif";
   btn.style.webkitTapHighlightColor = "transparent";
 
   return btn;
 }
 
 function createDevModuleSwitcher(order) {
-  // pojistka proti duplicitě
   const old = document.getElementById("dev-module-switcher");
   if (old) old.remove();
 
@@ -674,6 +872,8 @@ function createDevModuleSwitcher(order) {
     font: "12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif",
   });
 
+  const activeIndex = getStoredIndex();
+
   order.forEach((mod, index) => {
     const btn = document.createElement("button");
     btn.type = "button";
@@ -689,9 +889,14 @@ function createDevModuleSwitcher(order) {
       whiteSpace: "nowrap",
     });
 
+    if (index === activeIndex) {
+      btn.style.background = "var(--primaryColor)";
+      btn.style.color = "#000";
+      btn.style.fontWeight = "600";
+    }
+
     btn.addEventListener("click", () => {
       localStorage.setItem(LS_INDEX, String(index));
-      // DOM čistíme natvrdo
       const app = document.getElementById("app");
       if (app) app.innerHTML = "";
       startLaborator();
@@ -702,4 +907,3 @@ function createDevModuleSwitcher(order) {
 
   document.body.appendChild(wrap);
 }
-
