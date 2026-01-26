@@ -451,7 +451,7 @@ randomizeOneSafe(which = "primary", opts = {}) {
     return cur;
   }
 
-  const min = typeof opts.min === "number" ? opts.min : 2.0;
+  const min = typeof opts.min === "number" ? opts.min : 3.0;
   const tries = typeof opts.tries === "number" ? opts.tries : 1200;
 
   // cílová barva má projít proti oběma ostatním

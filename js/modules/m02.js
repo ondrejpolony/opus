@@ -3,10 +3,12 @@ export default function m02({ root, colors, complete }) {
   const ac = new AbortController();
   const { signal } = ac;
 
-  const ROWS = 12;
-  const COLS = 12;
-  const EXTRA_COLS = 1;
-  const TOTAL_COLS = COLS + EXTRA_COLS; // 13
+  // TEXT GRID
+  const ROWS = 10;
+  const COLS = 10;
+
+  // RIGHT COLUMN
+  const SIDE_ROWS = 15;
 
   const TEXT_INTERVAL = 200;
   const DECAY_INTERVAL = 30;
@@ -47,54 +49,44 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
         place-items: center;
       }
 
+      #m02 .wrap{
+        display: flex;
+        align-items: flex-start; /* důležité: zarovnáme horní hranu */
+        gap: 0;
+      }
+
+      /* ===== LEFT (10×10) ===== */
       #m02 .stage{
         position: relative;
         display: inline-block;
       }
 
       #m02 table{
-  border-collapse: collapse;
-  table-layout: fixed;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
 
-  /* výška = 90% kratší strany */
-  height: 90vmin;
+      #m02 #m02_grid{
+        width: 80vmin;
+        height: 80vmin;
+      }
 
-  /* šířka odpovídá počtu sloupců (13) */
-  width: calc(90vmin * (${TOTAL_COLS} / ${ROWS}));
-}
+      #m02 #m02_grid td{
+        width: calc(80vmin / ${ROWS});
+        height: calc(80vmin / ${ROWS});
+        text-align: center;
+        user-select: none;
+        border: none;
 
-#m02 td{
-  /* buňka je čtverec podle výšky */
-  width: calc(90vmin / ${ROWS});
-  height: calc(90vmin / ${ROWS});
+        color: var(--secondaryColor);
+        font-size: calc((80vmin / ${ROWS}) * 0.62);
+        line-height: 1;
 
-  text-align: center;
-  user-select: none;
-  border: none;
+        will-change: transform, letter-spacing, filter, opacity;
+        cursor: default;
+      }
 
-  color: var(--secondaryColor);
-  font-size: calc((90vmin / ${ROWS}) * 0.62);
-  line-height: 1;
-
-  will-change: transform, letter-spacing, filter, opacity;
-  cursor: default;
-}
-
-/* pravý speciální sloupec */
-#m02 td.m02-side{
-  padding: 0;
-  background: transparent;
-}
-
-/* linky mezi řádky v pravém sloupci */
-#m02 td.m02-side{
-  border-top: 1px solid var(--secondaryColor);
-}
-#m02 tr:first-child td.m02-side{
-  border-top: none; /* první bez horní linky */
-}
-
-      #m02 td.is-e{
+      #m02 #m02_grid td.is-e{
         background: var(--primaryColor);
         cursor: pointer;
       }
@@ -117,54 +109,74 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
         75%{transform:translate(-1px,-1px)}
         100%{transform:translate(0,0)}
       }
+
+      /* ===== RIGHT (15×1) ===== */
+      #m02 #m02_side{
+        height: 80vmin;
+      }
+
+      #m02 #m02_side td{
+        width: calc(80vmin / ${SIDE_ROWS});   /* čtverce */
+        height: calc(80vmin / ${SIDE_ROWS});  /* čtverce */
+        border: none;
+        padding: 0;
+        background: transparent;
+      }
+
+      /* linky mezi řádky v pravém sloupci */
+      #m02 #m02_side tr + tr td{
+        border-top: 1px solid var(--secondaryColor);
+      }
     </style>
 
     <div id="m02">
-      <div class="stage">
-        <table id="m02_grid" aria-label="Letter grid"></table>
-        <svg class="overlay" id="m02_overlay" aria-hidden="true"></svg>
+      <div class="wrap">
+        <div class="stage">
+          <table id="m02_grid" aria-label="Letter grid"></table>
+          <svg class="overlay" id="m02_overlay" aria-hidden="true"></svg>
+        </div>
+
+        <table id="m02_side" aria-label="Side column"></table>
       </div>
     </div>
   `;
 
   const table = root.querySelector("#m02_grid");
   const overlay = root.querySelector("#m02_overlay");
-  if (!table || !overlay) return () => ac.abort();
+  const sideTable = root.querySelector("#m02_side");
+  if (!table || !overlay || !sideTable) return () => ac.abort();
 
-  // random start cell in grid
+  // random start cell in 10×10 grid
   let cellIdx = Math.floor(Math.random() * (ROWS * COLS));
   let textIdx = 0;
 
   const startTime = performance.now();
 
-  // disabled cells (skipped forever)
+  // disabled cells (skipped forever) – jen pro 10×10 grid
   const disabled = new Set(); // "r,c"
   const keyOf = (r, c) => `${r},${c}`;
 
-  // polyline path saved as list of cells for resize-safe rebuild
-  const ePathCells = []; // [{r,c}]
-  let polyline = null;
-  
-    // === pravý (13.) sloupec: postupné barvení odspodu ===
-  const sideCells = new Array(ROWS);
-  let sideFill = ROWS - 1; // začínáme úplně dole
-
-  // === počítání kliků na É ===
+  // right column fill
+  const sideCells = new Array(SIDE_ROWS);
+  let sideFill = SIDE_ROWS - 1; // odspodu
   let eClicks = 0;
 
   function paintNextSideCell() {
-    if (sideFill < 0) return; // už jsme došli nahoru
+    if (sideFill < 0) return;
     const td = sideCells[sideFill];
     if (td) td.style.background = "var(--primaryColor)";
     sideFill -= 1;
   }
 
+  // polyline path (jen nad levým gridem)
+  const ePathCells = [];
+  let polyline = null;
 
   function ensurePolyline() {
     if (polyline) return;
     polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
     polyline.setAttribute("fill", "none");
-    polyline.setAttribute("stroke", "var(--primaryColor)"); // ✅ linka = primary
+    polyline.setAttribute("stroke", "var(--primaryColor)"); // linka = primary
     polyline.setAttribute("stroke-width", "2");
     polyline.setAttribute("stroke-linecap", "round");
     polyline.setAttribute("stroke-linejoin", "round");
@@ -229,7 +241,6 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
 
     const td = table.rows[r].cells[c];
 
-    // reset E state
     td.classList.remove("shake", "is-e");
     td.style.backgroundColor = "";
     td.style.cursor = "default";
@@ -237,8 +248,6 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
     if (ch === "É") {
       td.textContent = "É";
       td.classList.add("shake", "is-e");
-
-      // souvislá linie: přidá bod
       addEToPath(r, c);
     } else {
       td.textContent = ch;
@@ -316,74 +325,70 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
     }
   }
 
-  // build grid
+  // ===== build LEFT 10×10 =====
   for (let r = 0; r < ROWS; r++) {
     const tr = document.createElement("tr");
     for (let c = 0; c < COLS; c++) {
-  const td = document.createElement("td");
-  td.textContent = randomLetter();
-  td.style.fontFamily = randomFont();
-  td.dataset.r = String(r);
-  td.dataset.c = String(c);
+      const td = document.createElement("td");
+      td.textContent = randomLetter();
+      td.style.fontFamily = randomFont();
+      td.dataset.r = String(r);
+      td.dataset.c = String(c);
 
-  td.addEventListener("click", () => {
-    const rr = Number(td.dataset.r);
-    const cc = Number(td.dataset.c);
-    const k = keyOf(rr, cc);
+      td.addEventListener("click", () => {
+        const rr = Number(td.dataset.r);
+        const cc = Number(td.dataset.c);
+        const k = keyOf(rr, cc);
 
-    if (!td.classList.contains("is-e")) return;
+        if (!td.classList.contains("is-e")) return;
 
-    disabled.add(k);
+        // vyřadit buňku
+        disabled.add(k);
 
-    td.textContent = "";
-    td.classList.remove("shake", "is-e");
-    td.style.backgroundColor = "";
-    td.style.cursor = "default";
-    td.style.filter = "";
-    td.style.opacity = "";
-    td.style.letterSpacing = "";
-    td.style.transform = "";
-	
-	        // 1) obarvi další buňku v 13. sloupci (odspodu nahoru)
+        td.textContent = "";
+        td.classList.remove("shake", "is-e");
+        td.style.backgroundColor = "";
+        td.style.cursor = "default";
+        td.style.filter = "";
+        td.style.opacity = "";
+        td.style.letterSpacing = "";
+        td.style.transform = "";
+
+        // 1) vybarvi další buňku v pravém sloupci (odspodu)
         paintNextSideCell();
 
-        // počítání kliků na É
+        // 2) náhodná změna primaryColor
+        if (colors) {
+          if (typeof colors.randomize === "function") {
+            colors.randomize({ primary: true }, { duration: 500 });
+          } else if (typeof colors.set === "function") {
+            colors.set({ primary: randomHex() }, { duration: 500 });
+          } else {
+            document.documentElement.style.setProperty("--primaryColor", randomHex());
+          }
+        } else {
+          document.documentElement.style.setProperty("--primaryColor", randomHex());
+        }
+
+        // 3) po každých 4 kliknutích rotace
         eClicks += 1;
+        if (colors && typeof colors.rotate === "function" && eClicks % 4 === 0) {
+          colors.rotate(1, { duration: 500 });
+        }
+      }, { signal });
 
-
-    // 2) náhodná změna barvy (primary)
-if (colors) {
-  if (typeof colors.randomize === "function") {
-    colors.randomize({ primary: true }, { duration: 500 });
-  } else if (typeof colors.set === "function") {
-    colors.set({ primary: randomHex() }, { duration: 500 });
-  } else {
-    document.documentElement.style.setProperty("--primaryColor", randomHex());
+      tr.appendChild(td);
+    }
+    table.appendChild(tr);
   }
-} else {
-  document.documentElement.style.setProperty("--primaryColor", randomHex());
-}
 
-// 3) po každých 4 kliknutích na É rotace barev
-if (colors && typeof colors.rotate === "function" && eClicks % 4 === 0) {
-  colors.rotate(1, { duration: 500 });
-}
-  }, { signal });
-
-  tr.appendChild(td);
-}
-
-/* ✅ extra pravý sloupec – bez textu, bez dataset, bez kliků */
-const side = document.createElement("td");
-side.className = "m02-side";
-side.textContent = "";
-tr.appendChild(side);
-
-      // ✅ uložíme referenci (podle řádku r)
-      sideCells[r] = side;
-
-table.appendChild(tr);
-
+  // ===== build RIGHT 15×1 =====
+  for (let r = 0; r < SIDE_ROWS; r++) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    tr.appendChild(td);
+    sideTable.appendChild(tr);
+    sideCells[r] = td;
   }
 
   syncOverlaySize();
