@@ -223,9 +223,6 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
   function randomFont() {
     return FONTS[Math.floor(Math.random() * FONTS.length)];
   }
-  function randomHex() {
-    return "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0");
-  }
 
   function nextCharFromText() {
     const ch = SOURCE_TEXT[textIdx];
@@ -358,17 +355,7 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
         paintNextSideCell();
 
         // 2) náhodná změna primaryColor
-        if (colors) {
-          if (typeof colors.randomize === "function") {
-            colors.randomize({ primary: true }, { duration: 500 });
-          } else if (typeof colors.set === "function") {
-            colors.set({ primary: randomHex() }, { duration: 500 });
-          } else {
-            document.documentElement.style.setProperty("--primaryColor", randomHex());
-          }
-        } else {
-          document.documentElement.style.setProperty("--primaryColor", randomHex());
-        }
+        colors?.randomize?.({ primary: true }, { duration: 500 });
 
         // 3) po každých 4 kliknutích rotace
         eClicks += 1;
