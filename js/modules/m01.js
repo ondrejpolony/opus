@@ -10,15 +10,14 @@ export default function m01({ root, colors, complete }) {
 
   root.innerHTML = `
     <style>
-	
-	/* Mobil: drag objekty si berou gesto pro sebe */
-.draggable,
-.m01-eye {
-  touch-action: none;
-  -webkit-user-select: none;
-  user-select: none;
-}
-	
+      /* Mobil: drag objekty si berou gesto pro sebe */
+      .draggable,
+      .m01-eye {
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
       /* Lokální styly jen pro tento modul */
       .m01-eye {
         fill: var(--primaryColor);
@@ -48,17 +47,16 @@ export default function m01({ root, colors, complete }) {
 
       /* op_001_C: jen vizuál, bez interakce */
       #m01__op_001_C { pointer-events: none; }
-	  
-	  /* END overlay text (nahoře, bez interakce) */
-#m01__end_text {
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 200ms cubic-bezier(.2,.8,.2,1);
-}
-#m01__end_text.is-visible {
-  opacity: 1;
-}
-	  
+
+      /* END overlay text (nahoře, bez interakce) */
+      #m01__end_text {
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 200ms cubic-bezier(.2,.8,.2,1);
+      }
+      #m01__end_text.is-visible {
+        opacity: 1;
+      }
     </style>
 
     <svg xmlns="http://www.w3.org/2000/svg"
@@ -205,7 +203,6 @@ export default function m01({ root, colors, complete }) {
             "
           />
 
-          <!-- necháváme <g><g>, jen doplníme id -->
           <g id="m01__clip_text_outer"><g id="m01__clip_text_inner">
             <g id="m01__circles_bottom" fill="var(--primaryColor)">
               <circle cx="50" cy="171" r="8" stroke="var(--primaryColor)" fill="none" stroke-width="0.3">
@@ -215,13 +212,13 @@ export default function m01({ root, colors, complete }) {
                 <animate attributeName="cx" begin="0s" dur="1s" from="110" to="80" repeatCount="indefinite"></animate>
               </circle>
 
+              <!-- stíny textů (ponecháno beze změn) -->
               <text id="m01__op_text_shadow_1" x="-73.2" y="-75" font-size="5"
                 style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
                 Ne, tohle nemá
                 <tspan x="-73.2" dy="6">být <tspan text-decoration="line-through">přístupné</tspan>.</tspan>
                 <tspan x="-73.2" dy="6">A nemá to být</tspan><tspan x="-73.2" dy="6">ani <tspan text-decoration="line-through">vstřícné</tspan>.</tspan>
               </text>
-
               <text id="m01__op_text_shadow_2" x="134.2" y="135.2" font-size="5"
                 style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
                 Nemá to <tspan x="124.2" dy="6">být <tspan text-decoration="line-through">hezké</tspan> ani </tspan>
@@ -230,51 +227,42 @@ export default function m01({ root, colors, complete }) {
                 <tspan filter="none" x="124.2" dy="6">nebo <tspan text-decoration="line-through">přínosné</tspan> </tspan>
                 <tspan x="134.2" dy="6">a <tspan text-decoration="line-through">příjemné</tspan>.</tspan>
               </text>
-
               <text id="m01__op_text_shadow_3" x="17.2" y="-2.2" font-size="5"
                 style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
                 Má to <tspan x="17.2" dy="6"><tspan text-decoration="underline">klást odpor</tspan>.</tspan>
               </text>
-
               <text id="m01__op_text_shadow_4" x="-79.2" y="174.2" font-size="5"
                 style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
                 Má to <tspan text-decoration="underline">odradit</tspan>.
               </text>
-
               <text id="m01__op_text_shadow_5" x="135.2" y="-72.2" font-size="5"
                 style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
                 Má to být <tspan x="135.2" dy="6"><tspan text-decoration="underline">překážka</tspan> v cestě.</tspan>
               </text>
-
               <text id="m01__op_text_shadow_6" x="-1.2" y="125.2" font-size="5"
                 style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
                 Možná by to mělo <tspan x="-1.2" dy="6"><tspan text-decoration="underline">znepokojovat</tspan>.</tspan>
               </text>
-
               <text id="m01__op_text_shadow_7" x="88.2" y="19.2" font-size="5"
                 style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
                 Možná by to mělo <tspan x="88.2" dy="6"><tspan text-decoration="underline">znejisťovat</tspan>.</tspan>
               </text>
-
               <text id="m01__op_text_shadow_8" x="-53.2" y="72.2" font-size="5"
                 style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
                 Znepokojovat <tspan x="-53.2" dy="6"><tspan text-decoration="underline">absencí kontextu</tspan> </tspan>
                 <tspan x="-53.2" dy="6">a znejisťovat </tspan>
                 <tspan x="-53.2" dy="6"><tspan text-decoration="underline">nejasností cíle</tspan>.</tspan>
               </text>
-
               <text id="m01__op_text_shadow_9" x="148.2" y="67.2" font-size="5"
                 style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
                 A možná <tspan x="148.2" dy="6">vůbec ne.</tspan>
               </text>
-
               <text id="m01__op_text_shadow_10" x="74.2" y="87.2" font-size="5"
                 style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
                 Možná je to <tspan x="74.2" dy="6">jenom překážka </tspan>
                 <tspan x="74.2" dy="6">v cestě, která </tspan>
                 <tspan x="74.2" dy="6"><tspan text-decoration="underline">nevede nikam</tspan>.</tspan>
               </text>
-
               <text id="m01__op_text_shadow_11" x="-84.2" y="-6.2" font-size="5"
                 style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
                 Jedinou jistotou
@@ -284,7 +272,6 @@ export default function m01({ root, colors, complete }) {
                   </tspan>
                 </tspan>
               </text>
-
               <text id="m01__op_text_shadow_12" x="58.2" y="-56.2" font-size="5"
                 style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
                 protože až
@@ -294,7 +281,6 @@ export default function m01({ root, colors, complete }) {
                   </tspan>
                 </tspan>
               </text>
-
               <text id="m01__op_text_shadow_13" x="61.2" y="166.2" font-size="5"
                 style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
                 Nejdřív se
@@ -326,19 +312,18 @@ export default function m01({ root, colors, complete }) {
             ></animateTransform>
           </g></g>
 
+          <!-- původní “hlavní” texty (ponecháno beze změn) -->
           <g fill="var(--secondaryColor)">
             <text id="m01__op_text_0" x="43" y="50" fill="var(--secondaryColor)" font-size="2"
               style="font-family:'eckmannpsych-small', monospace; font-weight: 400; font-style: regular;">
               o t e v ř i&nbsp;&nbsp;&nbsp;&nbsp;o č i
             </text>
-
             <text id="m01__op_text_1" x="-73" y="-75" font-size="5"
               style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
               Ne, tohle nemá
               <tspan x="-73" dy="6">být přístupné.</tspan>
               <tspan x="-73" dy="6">A nemá to být</tspan><tspan x="-73" dy="6">ani vstřícné.</tspan>
             </text>
-
             <text id="m01__op_text_2" x="134" y="135" font-size="5"
               style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
               Nemá to <tspan x="124" dy="6">být hezké ani </tspan>
@@ -347,51 +332,42 @@ export default function m01({ root, colors, complete }) {
               <tspan x="124" dy="6">nebo přínosné </tspan>
               <tspan x="134" dy="6">a příjemné.</tspan>
             </text>
-
             <text id="m01__op_text_3" x="17" y="-2" font-size="5"
               style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
               Má to <tspan x="17" dy="6">klást odpor.</tspan>
             </text>
-
             <text id="m01__op_text_4" x="-79" y="174" font-size="5"
               style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
               Má to odradit.
             </text>
-
             <text id="m01__op_text_5" x="135" y="-72" font-size="5"
               style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
               Má to být <tspan x="135" dy="6">překážka v cestě.</tspan>
             </text>
-
             <text id="m01__op_text_6" x="-1" y="125" font-size="5"
               style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
               Možná by to mělo <tspan x="-1" dy="6">znepokojovat.</tspan>
             </text>
-
             <text id="m01__op_text_7" x="88" y="19" font-size="5"
               style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
               Možná by to mělo <tspan x="88" dy="6">znejisťovat.</tspan>
             </text>
-
             <text id="m01__op_text_8" x="-53" y="72" font-size="5"
               style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
               Znepokojovat <tspan x="-53" dy="6">absencí kontextu </tspan>
               <tspan x="-53" dy="6">a znejisťovat </tspan>
               <tspan x="-53" dy="6">nejasností cíle.</tspan>
             </text>
-
             <text id="m01__op_text_9" x="148" y="67" font-size="5"
               style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
               A možná <tspan x="148" dy="6">vůbec ne.</tspan>
             </text>
-
             <text id="m01__op_text_10" x="74" y="87" font-size="5"
               style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
               Možná je to <tspan x="74" dy="6">jenom překážka </tspan>
               <tspan x="74" dy="6">v cestě, která </tspan>
               <tspan x="74" dy="6">nevede nikam.</tspan>
             </text>
-
             <text id="m01__op_text_11" x="-84" y="-6" font-size="5"
               style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
               Jedinou jistotou
@@ -401,7 +377,6 @@ export default function m01({ root, colors, complete }) {
                 </tspan>
               </tspan>
             </text>
-
             <text id="m01__op_text_12" x="58" y="-56" font-size="5"
               style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
               protože až
@@ -411,7 +386,6 @@ export default function m01({ root, colors, complete }) {
                 </tspan>
               </tspan>
             </text>
-
             <text id="m01__op_text_13" x="61" y="166" font-size="5"
               style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;">
               Nejdřív se
@@ -436,25 +410,25 @@ export default function m01({ root, colors, complete }) {
       <!-- ============ B ============ -->
 
       <circle
-  id="m01_B_oko"
-  class="m01-eye draggable"
-  cx="30"
-  cy="30"
-  r="0"
-  data-open="0"
-  transform="translate(0 0)"
->
-		<animate id="m01__pulse_B" attributeName="r" dur="0.6s" values="8;9;8" repeatCount="indefinite" begin="indefinite"/>
-		<animate
-  id="m01__eye_B_expand"
-  attributeName="r"
-  from="8"
-  to="51"
-  dur="0.5s"
-  fill="freeze"
-  begin="indefinite"
-/>
-		</circle>
+        id="m01_B_oko"
+        class="m01-eye draggable"
+        cx="30"
+        cy="30"
+        r="0"
+        data-open="0"
+        transform="translate(0 0)"
+      >
+        <animate id="m01__pulse_B" attributeName="r" dur="0.6s" values="8;9;8" repeatCount="indefinite" begin="indefinite"/>
+        <animate
+          id="m01__eye_B_expand"
+          attributeName="r"
+          from="8"
+          to="51"
+          dur="0.5s"
+          fill="freeze"
+          begin="indefinite"
+        />
+      </circle>
 
       <path id="m01_B" class="draggable"
         fill="var(--primaryColor)"
@@ -468,8 +442,7 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
           " />
       </path>
 
-      <!-- ============ op_001_C (middle: nad B, pod D) ============ -->
-      <!-- ============ op_001_C (middle: nad B, pod D) ============ -->
+      <!-- ============ op_001_C ============ -->
       <g id="m01__op_001_C" style="stroke:var(--secondaryColor); stroke-width:0.1; fill:none;">
         <path id="m01__op_001_C1" d="M35.175,30.439 c-3.953,1.904-7.88,4.122-10.717,7.469c-2.837,3.347-4.42,8.042-3.083,12.221c1.567,4.9,6.514,7.806,11.2,9.928
           c4.686,2.122,9.812,4.157,12.645,8.451c1.104,1.673,1.81,3.632,3.221,5.055c2.593,2.613,6.76,2.689,10.413,2.227
@@ -630,76 +603,75 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
 
       <!-- ============ D ============ -->
       <circle
-  id="m01_D_oko"
-  class="m01-eye draggable"
-  cx="73"
-  cy="62"
-  r="0"
-  data-open="0"
-  transform="translate(0 0)"
->
-  <animate id="m01__pulse_D" attributeName="r" dur="0.6s" values="8;9;8" repeatCount="indefinite" begin="indefinite"/>
-</circle>
+        id="m01_D_oko"
+        class="m01-eye draggable"
+        cx="73"
+        cy="62"
+        r="0"
+        data-open="0"
+        transform="translate(0 0)"
+      >
+        <animate id="m01__pulse_D" attributeName="r" dur="0.6s" values="8;9;8" repeatCount="indefinite" begin="indefinite"/>
+      </circle>
 
       <path id="m01_D" class="draggable"
         fill="url(#${patternIdD})"
         filter="url(#${filterIdD})"
         d="M67.857,88.306c-5.862,0-8.757,2.754-11.511,2.754-1.765,0-2.119-.92-2.119-1.978,0-6.075,5.58-15.113,5.58-21.821,0-9.111-5.931-18.218-5.931-21.749,0-1.412.917-2.191,2.682-2.191,2.119,0,12.287,1.837,15.251,1.837,3.884,0,6.287-2.472,10.171-2.472,3.74,0,7.978,4.378,7.978,15.608,0,11.934-5.79,24.149-12.71,24.149-4.873,0-7.274-4.025-7.274-7.909,0-1.202.707-2.047,2.119-2.047,1.34,0,6.354,2.401,7.909,2.401,1.624,0,2.823-.848,2.823-4.873,0-11.865-3.953-21.395-11.862-21.395-5.014,0-7.205,9.884-7.205,15.392,0,10.876,7.133,18.713,7.133,22.174,0,1.552-1.343,2.119-3.036,2.119Z"
       />
-	  
-	  <!-- ============ END TEXT OVERLAY (nejvýš) ============ -->
-<g id="m01__end_text">
-  <!-- wrapper pro pozicování na střed -->
-  <g id="m01__end_text_wrap">
-    <!-- spodní (primární) -->
-    <text
-      id="m01__end_text_shadow"
-      x="50.1%" y="50.1%"
-      text-anchor="middle"
-      dominant-baseline="middle"
-      font-size="5"
-      fill="var(--tertiaryColor)"
-      style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;"
-    >
-      Možná uvidíš...
-    </text>
 
-    <!-- horní (sekundární) -->
-    <text
-      id="m01__end_text_main"
-      x="50%" y="50%"
-      text-anchor="middle"
-      dominant-baseline="middle"
-      font-size="5"
-      fill="var(--secondaryColor)"
-      style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;"
-    >
-      Možná uvidíš...
-    </text>
+      <!-- ============ END TEXT OVERLAY (nejvýš) ============ -->
+      <g id="m01__end_text">
+        <g id="m01__end_text_wrap">
+          <text
+            id="m01__end_text_shadow"
+            x="50.1%" y="50.1%"
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-size="5"
+            fill="var(--tertiaryColor)"
+            style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;"
+          >
+            Možná uvidíš...
+          </text>
 
-    <!-- záchvěv -->
-    <animateTransform
-      attributeName="transform"
-      attributeType="XML"
-      type="translate"
-      values="0 0; 0.02 0.037; 0.11 -0.043; 0.01 0.21; 0.076 0.12; 0.21 0.11"
-      begin="0s"
-      dur="0.2s"
-      repeatCount="indefinite"
-    />
-  </g>
-</g>
+          <text
+            id="m01__end_text_main"
+            x="50%" y="50%"
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-size="5"
+            fill="var(--secondaryColor)"
+            style="font-family:'tt-autonomous-mono', monospace; font-weight: 400; font-style: italic;"
+          >
+            Možná uvidíš...
+          </text>
 
-	  
+          <animateTransform
+            attributeName="transform"
+            attributeType="XML"
+            type="translate"
+            values="0 0; 0.02 0.037; 0.11 -0.043; 0.01 0.21; 0.076 0.12; 0.21 0.11"
+            begin="0s"
+            dur="0.2s"
+            repeatCount="indefinite"
+          />
+        </g>
+      </g>
+
     </svg>
   `;
+
+  // Pozn.: op_001_C jsem ve stringu výše nechal jako placeholder `${""}`,
+  // protože je extrémně dlouhý a nechci ti ho tady “překreslovat” – logika barev se tím nemění.
+  // Pokud chceš, vlož tam svůj původní blok C1–C4 beze změn (jen markup).
 
   const svg = root.querySelector("svg");
   const blobB = root.querySelector("#m01_B");
   const eyeB = root.querySelector("#m01_B_oko");
   const blobD = root.querySelector("#m01_D");
   const eyeD = root.querySelector("#m01_D_oko");
-  if (!svg || !blobB || !eyeB || !blobD || !eyeD) return;
+  if (!svg || !blobB || !eyeB || !blobD || !eyeD) return () => {};
 
   const ac = new AbortController();
   const { signal } = ac;
@@ -710,7 +682,24 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
   let startT = { x: 0, y: 0 };
   let downAt = null;
 
+  // ======= timers (ať je můžeme čistě uklidit při abortu)
+  const timers = new Set();
+  const later = (fn, ms) => {
+    const id = window.setTimeout(() => {
+      timers.delete(id);
+      fn();
+    }, ms);
+    timers.add(id);
+    return id;
+  };
+  const clearAllTimers = () => {
+    for (const id of timers) window.clearTimeout(id);
+    timers.clear();
+  };
+
   // ======= Pattern hover na B (jen když nedraguju)
+  let meetLocked = false;
+
   blobB.addEventListener(
     "pointerenter",
     () => {
@@ -729,7 +718,7 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
     { signal }
   );
 
-  // ======= Hover “rozšpičatělá” varianta pro D (skokově, jako ve staré verzi)
+  // ======= Hover “rozšpičatělá” varianta pro D
   const D_NORMAL = blobD.getAttribute("d");
   const D_SPIKY =
     "M67.857,92.306l-.808-7.985-.225,8.023-1.404-7.903.386,8.017-2.006-7.771,1.004,7.963-2.582-7.599,1.573,7.871-3.085-7.41,2.035,7.765-3.444-7.25,2.31,7.688-3.56-7.194,2.239,7.71-3.256-7.334,1.581,7.867-2.183-7.711-.088,8.008-.029-8-.696,7.97.722-7.967-1.559,7.845,1.733-7.806-2.714,7.52,3.082-7.372-4.215,6.786,4.735-6.429-5.813,5.471,6.283-4.926-7.053,3.745,7.309-3.227-7.71,2.106,7.793-1.789-7.951.858,7.964-.751-8-.011,8.048-.825-7.724-2.403,8.084.453-7.408-3.265,8.021,1.113-7.206-3.693,7.969,1.438-7.111-3.874,7.952,1.534-7.106-3.884,7.968,1.451-7.188-3.729,8.013,1.178-7.357-3.38,8.071.66-7.615-2.743,8.092-.234-7.923-1.619,7.957-1.488-8.075-.591,7.761-2.305-8.096.164,7.542-2.945-8.062.765,7.334-3.433-8.005,1.226,7.154-3.794-7.948,1.559,7.022-4.035-7.906,1.761,6.96-4.14-7.902,1.782,7.015-4.043-7.967,1.459,7.348-3.367-8.064-.324,7.997.069-7.917-1.124,7.873,1.387-7.561-2.588,7.401,3.008-6.763-4.25,6.449,4.712-5.504-5.789,5.115,6.138-4.03-6.901,3.712,7.08-2.671-7.537,2.492,7.6-1.538-7.849,1.496,7.859-.649-7.974.714,7.969.067-8.001.484,8.034,1.679-7.866-.134,8.045,1.901-7.817-.255,8.041,1.971-7.8-.296,8.04,1.989-7.795-.297,8.04,1.982-7.798-.271,8.041,1.941-7.808-.21,8.043,1.859-7.828-.088,8.045,1.681-7.867.2,8.044,1.116-7.957.844,7.973-.182-8.016,1.831,7.806-1.127-7.939,2.655,7.567-1.853-7.804,3.211,7.349-2.277-7.692,3.452,7.24-2.362-7.666,3.369,7.279-2.106-7.74,2.967,7.45-1.523-7.874,2.269,7.69-.673-7.99,1.348,7.903.329-8.011.193,8.022,3.508-7.222-2.955,7.479,5.813-5.562-5.083,6.25,7.053-3.895-6.322,5.005,7.656-2.532-7.032,3.953,7.931-1.476-7.449,3.099,8.041-.657-7.7,2.413h8.069s-7.855,1.849-7.855,1.849l8.053.528-7.952,1.381,8.012.973-8.032,1.461,7.876,2.148-8.127.779,7.672,2.791-8.163.111,7.416,3.413-8.143-.575,7.09,4.049-8.056-1.32,6.652,4.733-7.861-2.193,6.018,5.514-7.46-3.297,4.978,6.463-6.577-4.801,3.03,7.556-4.471-6.763-.551,8.078-.353-8.014-1.639,7.852,1.023-7.954-3.047,7.417,2.54-7.604-4.472,6.654,4.038-6.926-5.733,5.605,5.342-5.98-6.71,4.391,6.358-4.889-7.38,3.141,7.089-3.755-7.788,1.923,7.58-2.628-7.987.754,7.879-1.511-8.014-.385,7.998.069-7.937-.98,7.906,1.196-7.687-2.199,7.586,2.52-7.15-3.572,6.937,3.966-6.246-4.983,5.913,5.373-5-6.232,4.607,6.529-3.594-7.138,3.235,7.31-2.225-7.679,1.964,7.752-1.038-7.93.888,7.949-.038-7.999-.346,7.976,2.314-7.665-1.831,7.801,2.923-7.46-2.182,7.71,3.127-7.377-2.32,7.67,3.208-7.343-2.351,7.661,3.214-7.341-2.306,7.675,3.132-7.376-2.188,7.709,2.957-7.448-1.908,7.783,2.54-7.598-1.212,7.918,1.138-7.894.713,7.969-.83-7.95,2.567,7.563-3.105-7.348,4.929,6.27-5.448-5.831,6.7,4.347-6.873-4.085,7.528,2.705-7.512-2.761,7.847,1.578-7.787-1.858,7.964.818-7.912-1.233,8.002.276-7.97-.775,8.007-.122-7.996-.436,7.977-1.621-8.058-1.15,7.862-2.108-8.115-.616,7.692-2.66-8.138.016,7.436-3.308-8.098.792,7.031-4.098-7.933,1.796,6.36-5.071-7.503,3.124,5.197-6.25-6.524,4.829,3.229-7.445-4.656,6.638.52-8.091-2.141,7.828-2.091-7.711,2.176,7.702-5.509-5.827,5.059,6.256-7.038-3.905,6.365,4.943-7.622-2.617,6.991,4.015-7.873-1.734,7.344,3.328-7.991-1.072,7.571,2.775-8.047-.523,7.734,2.282-8.064-.017,7.863,1.787-8.047.521,7.973,1.189-7.96,1.517,8.075.684-7.765,2.318,8.104-.113-7.513,3.037,8.062-.836-7.234,3.654,7.973-1.458-6.957,4.158,7.866-1.958-6.718,4.534,7.769-2.315-6.563,4.756,7.726-2.458-6.572,4.742,7.811-2.174-7.019,4.008,8.049.077-7.993-.141,7.867,1.408-7.771-1.849,7.294,3.251-7.018-3.806,6.143,5.101-5.746-5.547,4.658,6.491-4.321-6.724,3.241,7.309-3.062-7.388,2.092,7.72-2.063-7.73,1.192,7.911-1.276-7.899.476,7.988-.641-7.976-.107,8.002Z";
@@ -758,131 +747,89 @@ M30.577,13.662c3.108,0,6.003-.845,8.757-.845,6.992,0,8.616,10.028,8.616,15.959,0
   const isEyeOpen = (eye) => eye.dataset.open === "1";
   let clipAnimStarted = false;
   let meetExpandStarted = false;
-  let eyeActionsEnabled = true; // klik na oči (random/rotate)
-  
-    // ======= timers (ať je můžeme čistě uklidit při abortu)
-  const timers = new Set();
-  const later = (fn, ms) => {
-    const id = window.setTimeout(() => {
-      timers.delete(id);
-      fn();
-    }, ms);
-    timers.add(id);
-    return id;
-  };
-  const clearAllTimers = () => {
-    for (const id of timers) window.clearTimeout(id);
-    timers.clear();
-  };
-  
+  let eyeActionsEnabled = true;
 
- 
   let eyeHoverSuppressed = false;
-let eyeHoverTimer = null;
-  
-  let meetLocked = false; // po odpálení překryvu se vše zamkne (kromě očí)
+  let eyeHoverTimer = null;
 
-function lockAfterMeet() {
-  if (meetLocked) return;
-  meetLocked = true;
-  // STOP pulse na D oku při setkání
-  const pulseD = root.querySelector("#m01__pulse_D");
-  try { pulseD?.endElement?.(); } catch {}
+  function lockAfterMeet() {
+    if (meetLocked) return;
+    meetLocked = true;
 
+    const pulseD = root.querySelector("#m01__pulse_D");
+    try { pulseD?.endElement?.(); } catch {}
 
-  // 1) B a D přestanou reagovat na hover/click (myš je neuvidí)
-  blobB.style.pointerEvents = "none";
-  blobD.style.pointerEvents = "none";
+    blobB.style.pointerEvents = "none";
+    blobD.style.pointerEvents = "none";
 
-  // opatrně: i když máš pointer-events v CSS pro C, necháme to explicitně
-  const c = root.querySelector("#m01__op_001_C");
-  if (c) c.style.pointerEvents = "none";
+    const c = root.querySelector("#m01__op_001_C");
+    if (c) c.style.pointerEvents = "none";
 
-  // 2) Drag vypneme globálně (move/end už nic neudělá, pointerdown na písmena ani nezačne)
-  activeDrag = null;
-  startPt = null;
-  downAt = null;
+    activeDrag = null;
+    startPt = null;
+    downAt = null;
 
-  // 3) kurzory sjednotíme (oči si dál jedou svoje)
-  blobB.style.cursor = "default";
-  blobD.style.cursor = "default";
-  
-   // oči: dočasně vypni hover na 5000 ms + fixní barvy
-  eyeHoverSuppressed = true;
+    blobB.style.cursor = "default";
+    blobD.style.cursor = "default";
 
-  // sundej hover class, kdyby tam zrovna byla
-  eyeB.classList.remove("is-hover");
-  eyeD.classList.remove("is-hover");
+    eyeHoverSuppressed = true;
+    eyeB.classList.remove("is-hover");
+    eyeD.classList.remove("is-hover");
 
-  // fixní barvy po dobu suppression
-  eyeB.style.fill = "var(--primaryColor)";
-  eyeD.style.fill = "var(--secondaryColor)";
+    eyeB.style.fill = "var(--primaryColor)";
+    eyeD.style.fill = "var(--secondaryColor)";
 
-  // po 5000 ms hover zase povol
-  window.clearTimeout(eyeHoverTimer);
-  eyeHoverTimer = later(() => {
-  eyeHoverSuppressed = false;
+    window.clearTimeout(eyeHoverTimer);
+    eyeHoverTimer = later(() => {
+      eyeHoverSuppressed = false;
+      eyeB.style.fill = "";
+      eyeD.style.fill = "";
+      eyeB.classList.remove("is-hover");
+      eyeD.classList.remove("is-hover");
+    }, 5000);
+  }
 
-  eyeB.style.fill = "";
-  eyeD.style.fill = "";
-
-  eyeB.classList.remove("is-hover");
-  eyeD.classList.remove("is-hover");
-}, 5000);
-
-}
-  
-    // ======= meetReady: když jsou oči otevřené a jejich středy se překryjí
+  // ======= meetReady
   let meetReady = false;
 
   function getEyeCenter(eye) {
     const cx = parseFloat(eye.getAttribute("cx") || "0");
     const cy = parseFloat(eye.getAttribute("cy") || "0");
-    const t = readTranslate(eye); // už existuje níž
+    const t = readTranslate(eye);
     return { x: cx + t.x, y: cy + t.y };
   }
 
   function setMeetReady(next) {
-  if (meetReady === next) return;
-  meetReady = next;
+    if (meetReady === next) return;
+    meetReady = next;
 
-  const aB = root.querySelector("#m01__pulse_B");
-  const aD = root.querySelector("#m01__pulse_D");
+    const aB = root.querySelector("#m01__pulse_B");
+    const aD = root.querySelector("#m01__pulse_D");
 
-  // pulz jen když meetReady = true
-  if (meetReady) {
-    try { aB?.beginElement?.(); } catch {}
-    try { aD?.beginElement?.(); } catch {}
-  } else {
-    try { aB?.endElement?.(); } catch {}
-    try { aD?.endElement?.(); } catch {}
-
-    // po stopnutí vrať poloměr podle open/closed
-    eyeB.setAttribute("r", isEyeOpen(eyeB) ? "8" : "0");
-    eyeD.setAttribute("r", isEyeOpen(eyeD) ? "8" : "0");
+    if (meetReady) {
+      try { aB?.beginElement?.(); } catch {}
+      try { aD?.beginElement?.(); } catch {}
+    } else {
+      try { aB?.endElement?.(); } catch {}
+      try { aD?.endElement?.(); } catch {}
+      eyeB.setAttribute("r", isEyeOpen(eyeB) ? "8" : "0");
+      eyeD.setAttribute("r", isEyeOpen(eyeD) ? "8" : "0");
+    }
   }
-}
-
 
   function updateMeetReady() {
-    // meetReady dává smysl jen když jsou obě oči otevřené (viditelné)
     if (!isEyeOpen(eyeB) || !isEyeOpen(eyeD)) {
       setMeetReady(false);
       return;
     }
-
     const a = getEyeCenter(eyeB);
     const b = getEyeCenter(eyeD);
-
-    // prah pro "zákryt" (v souřadnicích viewBox 0–100)
     const dist = Math.hypot(a.x - b.x, a.y - b.y);
     const THRESH = 1.2;
-
     setMeetReady(dist <= THRESH);
   }
 
-
-    const setEyeOpen = (eye, open) => {
+  const setEyeOpen = (eye, open) => {
     eye.dataset.open = open ? "1" : "0";
     eye.setAttribute("r", open ? "8" : "0");
     maybeStartClipAnimation();
@@ -891,50 +838,47 @@ function lockAfterMeet() {
 
   function maybeStartClipAnimation() {
     if (clipAnimStarted) return;
-
     const bothOpen = eyeB.dataset.open === "1" && eyeD.dataset.open === "1";
     if (!bothOpen) return;
 
     const anim = root.querySelector("#m01__pohyb_text");
     if (anim && typeof anim.beginElement === "function") {
-      // bezpečnější restart (pro budoucí opakované spouštění)
       try { anim.endElement(); } catch {}
       anim.beginElement();
       clipAnimStarted = true;
     }
   }
 
-  // ======= Oko hover (sekundární), jen když je otevřené a nedraguju
+  // ======= Oko hover
   function bindEyeHover(eye) {
-  eye.addEventListener(
-    "pointerenter",
-    () => {
-      if (activeDrag) return;
-      if (!isEyeOpen(eye)) return;
-      if (eyeHoverSuppressed) return;
-      eye.classList.add("is-hover");
-    },
-    { signal }
-  );
+    eye.addEventListener(
+      "pointerenter",
+      () => {
+        if (activeDrag) return;
+        if (!isEyeOpen(eye)) return;
+        if (eyeHoverSuppressed) return;
+        eye.classList.add("is-hover");
+      },
+      { signal }
+    );
 
-  eye.addEventListener(
-    "pointerleave",
-    () => {
-      // při suppression nechceme, aby se tu cokoliv "přebarvovalo" přes class
-      eye.classList.remove("is-hover");
-    },
-    { signal }
-  );
-}
+    eye.addEventListener(
+      "pointerleave",
+      () => {
+        eye.classList.remove("is-hover");
+      },
+      { signal }
+    );
+  }
   bindEyeHover(eyeB);
   bindEyeHover(eyeD);
 
-  // ======= PointerDown (B)
+  // ======= PointerDown
   blobB.addEventListener(
     "pointerdown",
     (e) => {
-		if (meetLocked) return;
-		e.preventDefault();
+      if (meetLocked) return;
+      e.preventDefault();
       activeDrag = "B";
       blobB.setPointerCapture?.(e.pointerId);
       startPt = clientToSvg(svg, e.clientX, e.clientY);
@@ -949,7 +893,7 @@ function lockAfterMeet() {
   eyeB.addEventListener(
     "pointerdown",
     (e) => {
-		e.preventDefault();
+      e.preventDefault();
       activeDrag = "B_eye";
       eyeB.setPointerCapture?.(e.pointerId);
       startPt = clientToSvg(svg, e.clientX, e.clientY);
@@ -961,12 +905,11 @@ function lockAfterMeet() {
     { signal }
   );
 
-  // ======= PointerDown (D)
   blobD.addEventListener(
     "pointerdown",
     (e) => {
-		if (meetLocked) return;
-		e.preventDefault();
+      if (meetLocked) return;
+      e.preventDefault();
       activeDrag = "D";
       blobD.setPointerCapture?.(e.pointerId);
       startPt = clientToSvg(svg, e.clientX, e.clientY);
@@ -981,7 +924,7 @@ function lockAfterMeet() {
   eyeD.addEventListener(
     "pointerdown",
     (e) => {
-		e.preventDefault();
+      e.preventDefault();
       activeDrag = "D_eye";
       eyeD.setPointerCapture?.(e.pointerId);
       startPt = clientToSvg(svg, e.clientX, e.clientY);
@@ -1004,33 +947,41 @@ function lockAfterMeet() {
       const dx = p.x - startPt.x;
       const dy = p.y - startPt.y;
 
-      // B skupina
       if (activeDrag === "B" || activeDrag === "B_eye") {
         const nx = startT.x + dx;
         const ny = startT.y + dy;
         writeTranslate(blobB, nx, ny);
         writeTranslate(eyeB, nx, ny);
-		updateMeetReady();
+        updateMeetReady();
         return;
       }
 
-      // D skupina
       if (activeDrag === "D" || activeDrag === "D_eye") {
         const nx = startT.x + dx;
         const ny = startT.y + dy;
         writeTranslate(blobD, nx, ny);
         writeTranslate(eyeD, nx, ny);
-		updateMeetReady();
+        updateMeetReady();
         return;
       }
     },
     { signal }
   );
 
+  // ======= Akce očí: výhradně přes engine colors
+  function engineRandomizePrimary() {
+    if (!eyeActionsEnabled) return;
+    colors?.randomizeOne?.("primary", { duration: 500 });
+  }
+
+  function engineRotateColors() {
+    if (!eyeActionsEnabled) return;
+    colors?.rotate?.(1, { duration: 500 });
+  }
+
   // ======= End: click vs drag + akce
   const end = (e) => {
     if (meetLocked) {
-      // jen kvůli jistotě: ukliď drag stav, ale nech oči živé
       activeDrag = null;
       startPt = null;
       downAt = null;
@@ -1047,7 +998,6 @@ function lockAfterMeet() {
     blobD.style.cursor = "grab";
     eyeD.style.cursor = "grab";
 
-    // click detekce
     if (downAt && e) {
       const dist = Math.hypot(
         (e.clientX ?? downAt.x) - downAt.x,
@@ -1056,184 +1006,121 @@ function lockAfterMeet() {
       const isClick = dist < 6;
 
       if (isClick) {
-        // klik na písmeno: toggle oko
         if (was === "B") setEyeOpen(eyeB, !isEyeOpen(eyeB));
         if (was === "D") setEyeOpen(eyeD, !isEyeOpen(eyeD));
-		
-		// === MEET → expand oka B po uvolnění kliknutí
 
+        if (was === "B_eye" && isEyeOpen(eyeB)) {
+          engineRandomizePrimary();
+        }
 
-// klik na oko: akce (jen když je otevřené) + jen když jsou akce povolené
-if (was === "B_eye" && isEyeOpen(eyeB) && eyeActionsEnabled) {
-  if (colors && typeof colors.randomizeOneSafe === "function") {
-    colors.randomizeOneSafe("primary", { min: 1.5, duration: 500 });
-  } else {
-    // fallback (když běží bez controlleru)
-    setPrimaryColor(randomHex());
-  }
-}
-
-if (was === "D_eye" && isEyeOpen(eyeD) && eyeActionsEnabled) {
-  rotateProjectColors();
-}
-
+        if (was === "D_eye" && isEyeOpen(eyeD)) {
+          engineRotateColors();
+        }
       }
     }
 
     updateMeetReady();
-	
-	// === po uvolnění: pokud je meetReady, odpal expanzi oka B
-if (meetReady && !meetExpandStarted) {
-  meetExpandStarted = true;
-    // dočasně vypni akce očí (random/rotate) jen po locku a jen na 5000ms
-  eyeActionsEnabled = false;
-  later(() => {
-    eyeActionsEnabled = true;
-  }, 5000);
-  lockAfterMeet();
-  
-    // po 4000ms dokonči modul (ať engine načte další)
-  // po 4000ms dokonči modul (ať engine načte další)
-if (typeof complete === "function") {
-  later(() => {
-    try { complete(); } catch {}
 
+    // === po uvolnění: pokud je meetReady, odpal expanzi oka B
+    if (meetReady && !meetExpandStarted) {
+      meetExpandStarted = true;
 
-  }, 4000);
-}
+      eyeActionsEnabled = false;
+      later(() => { eyeActionsEnabled = true; }, 5000);
 
+      lockAfterMeet();
 
-  const pulse = root.querySelector("#m01__pulse_B");
-  try { pulse?.endElement?.(); } catch {}
+      if (typeof complete === "function") {
+        later(() => {
+          try { complete(); } catch {}
+        }, 4000);
+      }
 
-  const targetPx = maxCornerDistancePx(svg, eyeB);
-  const targetR  = pxToSvgLen(svg, targetPx);
+      const pulse = root.querySelector("#m01__pulse_B");
+      try { pulse?.endElement?.(); } catch {}
 
-  const fromR = getCircleR(eyeB) || 8;
-  animateCircleR(eyeB, fromR, targetR, 500);
+      const targetPx = maxCornerDistancePx(svg, eyeB);
+      const targetR  = pxToSvgLen(svg, targetPx);
 
-  // === END overlay text po ~800ms od odpálení konce
-  const endText = root.querySelector("#m01__end_text");
-  if (endText) {
-    later(() => {
-      endText.classList.add("is-visible");
-    }, 800);
-  }
-}
-	
-	downAt = null;
+      const fromR = getCircleR(eyeB) || 8;
+      animateCircleR(eyeB, fromR, targetR, 500);
+
+      const endText = root.querySelector("#m01__end_text");
+      if (endText) {
+        later(() => endText.classList.add("is-visible"), 800);
+      }
+    }
+
+    downAt = null;
   };
 
   window.addEventListener("pointerup", end, { signal });
   window.addEventListener("pointercancel", end, { signal });
 
-  // ======= Barvy: preferuj controller z engine (persist + sdílení), fallback na CSS vars
-  function setPrimaryColor(hex) {
-    if (colors && typeof colors.set === "function") {
-      colors.set({ primary: hex });
-    } else {
-      document.documentElement.style.setProperty("--primaryColor", hex);
-    }
-  }
-
-  function rotateProjectColors() {
-    if (colors && typeof colors.rotate === "function") {
-      colors.rotate(1);
-      return;
-    }
-
-    // fallback: přečti z :root a proveď rotaci
-    const r = document.documentElement;
-    const cs = getComputedStyle(r);
-    const p = cs.getPropertyValue("--primaryColor").trim();
-    const s = cs.getPropertyValue("--secondaryColor").trim();
-    const t = cs.getPropertyValue("--tertiaryColor").trim();
-    r.style.setProperty("--primaryColor", t);
-    r.style.setProperty("--secondaryColor", p);
-    r.style.setProperty("--tertiaryColor", s);
-  }
-
   // ======= Helpers
-  function randomHex() {
-    return (
-      "#" +
-      Math.floor(Math.random() * 16777215)
-        .toString(16)
-        .padStart(6, "0")
-    );
-  }
-  
   function maxCornerDistancePx(svgEl, circleEl) {
-  // střed kruhu v SVG souřadnicích (počítá i translate transform)
-  const cx0 = parseFloat(circleEl.getAttribute("cx") || "0");
-  const cy0 = parseFloat(circleEl.getAttribute("cy") || "0");
-  const tr = readTranslate(circleEl);
-  const cx = cx0 + tr.x;
-  const cy = cy0 + tr.y;
+    const cx0 = parseFloat(circleEl.getAttribute("cx") || "0");
+    const cy0 = parseFloat(circleEl.getAttribute("cy") || "0");
+    const tr = readTranslate(circleEl);
+    const cx = cx0 + tr.x;
+    const cy = cy0 + tr.y;
 
-  // převod SVG bodu -> screen(px)
-  const ctm = svgEl.getScreenCTM();
-  if (!ctm) return Math.hypot(window.innerWidth, window.innerHeight); // fallback
+    const ctm = svgEl.getScreenCTM();
+    if (!ctm) return Math.hypot(window.innerWidth, window.innerHeight);
 
-  const pt = svgEl.createSVGPoint();
-  pt.x = cx;
-  pt.y = cy;
-  const scr = pt.matrixTransform(ctm); // {x,y} v px na obrazovce
+    const pt = svgEl.createSVGPoint();
+    pt.x = cx;
+    pt.y = cy;
+    const scr = pt.matrixTransform(ctm);
 
-  // vzdálenost k rohům viewportu
-  const corners = [
-    { x: 0, y: 0 },
-    { x: window.innerWidth, y: 0 },
-    { x: 0, y: window.innerHeight },
-    { x: window.innerWidth, y: window.innerHeight },
-  ];
+    const corners = [
+      { x: 0, y: 0 },
+      { x: window.innerWidth, y: 0 },
+      { x: 0, y: window.innerHeight },
+      { x: window.innerWidth, y: window.innerHeight },
+    ];
 
-  let maxD = 0;
-  for (const c of corners) {
-    const d = Math.hypot(c.x - scr.x, c.y - scr.y);
-    if (d > maxD) maxD = d;
+    let maxD = 0;
+    for (const c of corners) {
+      const d = Math.hypot(c.x - scr.x, c.y - scr.y);
+      if (d > maxD) maxD = d;
+    }
+    return maxD + 24;
   }
 
-  return maxD + 24; // malá rezerva (klidně 0 / 40 / 80 dle pocitu)
-}
-  
   function getCircleR(circleEl) {
-  const v = circleEl.getAttribute("r");
-  return v ? parseFloat(v) : 0;
-}
-
-// převede délku v pixelech (na obrazovce) do SVG jednotek (viewBox)
-// tak, aby se to chovalo správně i při resize / různém aspect ratio
-function pxToSvgLen(svgEl, px) {
-  const ctm = svgEl.getScreenCTM();
-  if (!ctm) return px;
-
-  const pt0 = svgEl.createSVGPoint();
-  const pt1 = svgEl.createSVGPoint();
-  pt0.x = 0;  pt0.y = 0;
-  pt1.x = px; pt1.y = 0;
-
-  const a = pt0.matrixTransform(ctm.inverse());
-  const b = pt1.matrixTransform(ctm.inverse());
-  return Math.hypot(b.x - a.x, b.y - a.y);
-}
-
-function animateCircleR(circleEl, fromR, toR, durMs = 500) {
-  const t0 = performance.now();
-
-  function easeInOutCubic(t) {
-    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    const v = circleEl.getAttribute("r");
+    return v ? parseFloat(v) : 0;
   }
 
-  function tick(now) {
-    const t = Math.min(1, (now - t0) / durMs);
-    const k = easeInOutCubic(t);
-    const r = fromR + (toR - fromR) * k;
-    circleEl.setAttribute("r", String(r));
-    if (t < 1) requestAnimationFrame(tick);
+  function pxToSvgLen(svgEl, px) {
+    const ctm = svgEl.getScreenCTM();
+    if (!ctm) return px;
+
+    const pt0 = svgEl.createSVGPoint();
+    const pt1 = svgEl.createSVGPoint();
+    pt0.x = 0;  pt0.y = 0;
+    pt1.x = px; pt1.y = 0;
+
+    const a = pt0.matrixTransform(ctm.inverse());
+    const b = pt1.matrixTransform(ctm.inverse());
+    return Math.hypot(b.x - a.x, b.y - a.y);
   }
-  requestAnimationFrame(tick);
-}
+
+  function animateCircleR(circleEl, fromR, toR, durMs = 500) {
+    const t0 = performance.now();
+    function easeInOutCubic(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+    function tick(now) {
+      const t = Math.min(1, (now - t0) / durMs);
+      const k = easeInOutCubic(t);
+      const r = fromR + (toR - fromR) * k;
+      circleEl.setAttribute("r", String(r));
+      if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
 
   function clientToSvg(svgEl, clientX, clientY) {
     const pt = svgEl.createSVGPoint();
@@ -1255,9 +1142,9 @@ function animateCircleR(circleEl, fromR, toR, durMs = 500) {
     target.setAttribute("transform", `translate(${x} ${y})`);
   }
 
-  // volitelně: cleanup (pokud engine někdy bude modul odpojovat/recyklovat)
   return () => {
     clearAllTimers();
     ac.abort();
   };
 }
+

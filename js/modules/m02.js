@@ -156,16 +156,56 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
   const disabled = new Set(); // "r,c"
   const keyOf = (r, c) => `${r},${c}`;
 
-  // right column fill
-  const sideCells = new Array(SIDE_ROWS);
-  let sideFill = SIDE_ROWS - 1; // odspodu
-  let eClicks = 0;
+  /* =========================
+     RIGHT COLUMN (15×1)
+     - plní se odspodu
+     - při plném a dalším É: reset na 0 a začni znovu
+     - klikatelný je jen nejhořejší vyplněný čtverec
+     - klik na něj: rotate + odbarví (sideFilled--)
+     ========================= */
 
-  function paintNextSideCell() {
-    if (sideFill < 0) return;
-    const td = sideCells[sideFill];
-    if (td) td.style.background = "var(--primaryColor)";
-    sideFill -= 1;
+  const sideCells = new Array(SIDE_ROWS);
+  let sideFilled = 0; // 0..SIDE_ROWS
+
+  function renderSide() {
+    // vyplňujeme odspodu nahoru
+    for (let i = 0; i < SIDE_ROWS; i++) {
+      const td = sideCells[i];
+      if (!td) continue;
+
+      const shouldBeOn = i >= (SIDE_ROWS - sideFilled);
+      td.style.background = shouldBeOn ? "var(--primaryColor)" : "transparent";
+      td.dataset.filled = shouldBeOn ? "1" : "0";
+
+      // defaultně neklikatelný (aktivní nastavíme níž)
+      td.dataset.active = "0";
+      td.style.pointerEvents = "none";
+      td.style.cursor = "default";
+    }
+
+    // jen "nejhořejší vyplněný" je aktivní
+    if (sideFilled > 0) {
+      const topIndex = SIDE_ROWS - sideFilled; // nejvyšší vyplněný
+      const td = sideCells[topIndex];
+      if (td) {
+        td.dataset.active = "1";
+        td.style.pointerEvents = "auto";
+        td.style.cursor = "pointer";
+      }
+    }
+  }
+
+  function advanceSideByOne() {
+    // když je plno a přijde další É -> reset na 0 a po tomto kliknutí bude 1
+    if (sideFilled >= SIDE_ROWS) sideFilled = 0;
+    sideFilled = Math.min(SIDE_ROWS, sideFilled + 1);
+    renderSide();
+  }
+
+  function popTopSideCell() {
+    if (sideFilled <= 0) return;
+    sideFilled = Math.max(0, sideFilled - 1);
+    renderSide();
   }
 
   // polyline path (jen nad levým gridem)
@@ -332,37 +372,35 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
       td.dataset.r = String(r);
       td.dataset.c = String(c);
 
-      td.addEventListener("click", () => {
-        const rr = Number(td.dataset.r);
-        const cc = Number(td.dataset.c);
-        const k = keyOf(rr, cc);
+      td.addEventListener(
+        "click",
+        () => {
+          const rr = Number(td.dataset.r);
+          const cc = Number(td.dataset.c);
+          const k = keyOf(rr, cc);
 
-        if (!td.classList.contains("is-e")) return;
+          if (!td.classList.contains("is-e")) return;
 
-        // vyřadit buňku
-        disabled.add(k);
+          // vyřadit buňku
+          disabled.add(k);
 
-        td.textContent = "";
-        td.classList.remove("shake", "is-e");
-        td.style.backgroundColor = "";
-        td.style.cursor = "default";
-        td.style.filter = "";
-        td.style.opacity = "";
-        td.style.letterSpacing = "";
-        td.style.transform = "";
+          td.textContent = "";
+          td.classList.remove("shake", "is-e");
+          td.style.backgroundColor = "";
+          td.style.cursor = "default";
+          td.style.filter = "";
+          td.style.opacity = "";
+          td.style.letterSpacing = "";
+          td.style.transform = "";
 
-        // 1) vybarvi další buňku v pravém sloupci (odspodu)
-        paintNextSideCell();
+          // 1) vybarvi další buňku v pravém sloupci (odspodu) / nebo reset když je plno
+          advanceSideByOne();
 
-        // 2) náhodná změna primaryColor
-        colors?.randomize?.({ primary: true }, { duration: 500 });
-
-        // 3) po každých 4 kliknutích rotace
-        eClicks += 1;
-        if (colors && typeof colors.rotate === "function" && eClicks % 4 === 0) {
-          colors.rotate(1, { duration: 500 });
-        }
-      }, { signal });
+          // 2) náhodná změna primaryColor (správné API z engine.js)
+          colors?.randomizeOne?.("primary", { duration: 500 });
+        },
+        { signal }
+      );
 
       tr.appendChild(td);
     }
@@ -373,10 +411,26 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
   for (let r = 0; r < SIDE_ROWS; r++) {
     const tr = document.createElement("tr");
     const td = document.createElement("td");
+
+    td.addEventListener(
+      "click",
+      () => {
+        // jen aktivní (nejhořejší vyplněný)
+        if (td.dataset.active !== "1") return;
+
+        colors?.rotate?.(1, { duration: 500 });
+        popTopSideCell();
+      },
+      { signal }
+    );
+
     tr.appendChild(td);
     sideTable.appendChild(tr);
     sideCells[r] = td;
   }
+
+  // initial render
+  renderSide();
 
   syncOverlaySize();
   ensurePolyline();

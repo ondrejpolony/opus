@@ -1,4 +1,6 @@
 // js/engine.js
+// sjednoceno: změny barev řeší jen engine.js
+// zjednodušeno: jen JEDNA random funkce (HSL), bez kontrastů
 
 import m01 from "./modules/m01.js";
 import placeholder from "./modules/placeholder.js";
@@ -205,10 +207,10 @@ function renderModule(app, mod, { onComplete, devCompleteEnabled, colors } = {})
 }
 
 /* =======================
-   COLOR CONTROLLER (plynulá rotace)
+   COLOR CONTROLLER
    - animuje změny přes CSS vars (pro celý projekt)
    - persistuje finální stav po doběhnutí animace
-   - randomize umí HSL + minimální kontrast + minimální rozdíl odstínu
+   - randomizeOne = jediný generátor (HSL), bez kontrastů
    ======================= */
 
 function createColorsController({ duration = 500 } = {}) {
@@ -254,268 +256,13 @@ function createColorsController({ duration = 500 } = {}) {
       const from = normalizeColors(cssNow) || state;
 
       startAnim(from, nextState, dur);
-      state = nextState; // cíl je nová "pravda", ale persist až na konci
+      state = nextState; // cíl je nová "pravda", persist až na konci
       return api.get();
     },
 
     reset(opts = {}) {
       return api.set({ ...DEFAULT_COLORS }, opts);
     },
-
-    // HSL randomize + volitelný minimální kontrast + minimální "odlišnost"
-    randomize(
-      {
-        primary = false,
-        secondary = false,
-        tertiary = false,
-        ensureContrast = false,
-
-        satRange = [0.65, 1.0],
-        lightRange = [0.25, 0.85],
-
-        // minimální rozdíl světlosti v HSL (jen rychlá pojistka)
-        minLightDiff = 0.28,
-
-        // minimální rozdíl odstínu (Hue) v ° — hlavní "odlišnost"
-        minHueDiff = 80,
-
-        // minimální kontrasty (doporučené pro 3 barevné barvy)
-        minPS = 4.5,
-        minST = 4.5,
-        minPT = 4.5,
-
-        // minimální rozdíl relativní luminance (extra pojistka proti "podobnosti")
-        minLumDiff = 0.26,
-      } = {},
-      opts = {}
-    ) {
-      function randInRange([a, b]) {
-        return a + Math.random() * (b - a);
-      }
-
-      function genHsl() {
-        return {
-          h: Math.random() * 360,
-          s: randInRange(satRange),
-          l: randInRange(lightRange),
-        };
-      }
-
-      function tooCloseL(a, b) {
-        return Math.abs(a.l - b.l) < minLightDiff;
-      }
-
-      function hueDist(a, b) {
-        const d = Math.abs(a.h - b.h) % 360;
-        return Math.min(d, 360 - d);
-      }
-	  
-	  function findColorAgainstBoth({ againstA, againstB, min, tries }) {
-		for (let i = 0; i < tries; i++) {
-			const cand = hslToHex(
-				Math.random() * 360,
-				randInRange(satRange),
-				randInRange(lightRange)
-			);
-
-			if (contrastRatio(cand, againstA) >= min && contrastRatio(cand, againstB) >= min) {
-				return cand;
-			}
-		}
-		return null;
-	  }
-
-
-      // bez kontrastu = hezký HSL random, ale držíme minLightDiff + minHueDiff
-      if (!ensureContrast) {
-        const next = { ...state };
-
-        let A = genHsl();
-        let B = genHsl();
-        let C = genHsl();
-
-        let guard = 0;
-        while (
-          (tooCloseL(A, B) ||
-            tooCloseL(B, C) ||
-            tooCloseL(A, C) ||
-            hueDist(A, B) < minHueDiff ||
-            hueDist(B, C) < minHueDiff ||
-            hueDist(A, C) < minHueDiff) &&
-          guard++ < 200
-        ) {
-          B = genHsl();
-          C = genHsl();
-        }
-
-        if (primary) next.primary = hslToHex(A.h, A.s, A.l);
-        if (secondary) next.secondary = hslToHex(B.h, B.s, B.l);
-        if (tertiary) next.tertiary = hslToHex(C.h, C.s, C.l);
-        return api.set(next, opts);
-      }
-
-      // ensureContrast = generuj dokud neprojde kontrast + světlost + hue
-      const maxTries = 1200;
-      for (let i = 0; i < maxTries; i++) {
-        const next = { ...state };
-
-        // vždy generuj 3 HSL kandidáty (když nechceš měnit některou barvu, nastav primary/secondary/tertiary true)
-        const A = genHsl();
-        const B = genHsl();
-        const C = genHsl();
-
-        // 0) odlišnost odstínů
-        if (
-          hueDist(A, B) < minHueDiff ||
-          hueDist(B, C) < minHueDiff ||
-          hueDist(A, C) < minHueDiff
-        )
-          continue;
-
-        // 0b) odlišnost světlosti v HSL
-        if (tooCloseL(A, B) || tooCloseL(B, C) || tooCloseL(A, C)) continue;
-
-        const hexP = hslToHex(A.h, A.s, A.l);
-        const hexS = hslToHex(B.h, B.s, B.l);
-        const hexT = hslToHex(C.h, C.s, C.l);
-
-        // 1) kontrastní testy
-        const ps = contrastRatio(hexP, hexS);
-        const st = contrastRatio(hexS, hexT);
-        const pt = contrastRatio(hexP, hexT);
-        if (ps < minPS || st < minST || pt < minPT) continue;
-
-        // 2) luminance distance (pojistka "podobnosti")
-        const Lp = relLuminance(hexToRgb(hexP));
-        const Ls = relLuminance(hexToRgb(hexS));
-        const Lt = relLuminance(hexToRgb(hexT));
-        if (
-          Math.abs(Lp - Ls) < minLumDiff ||
-          Math.abs(Ls - Lt) < minLumDiff ||
-          Math.abs(Lp - Lt) < minLumDiff
-        )
-          continue;
-
-        // prošlo -> zapiš (všechno barevné)
-        next.primary = hexP;
-        next.secondary = hexS;
-        next.tertiary = hexT;
-
-        return api.set(next, opts);
-      }
-
-      // fallback (stále barevné): zkus mírnější pravidla, ale zachovej hue rozdíl
-      for (let i = 0; i < 1200; i++) {
-        const next = { ...state };
-        const A = genHsl();
-        const B = genHsl();
-        const C = genHsl();
-
-        if (
-          hueDist(A, B) < Math.max(50, minHueDiff - 20) ||
-          hueDist(B, C) < Math.max(50, minHueDiff - 20) ||
-          hueDist(A, C) < Math.max(50, minHueDiff - 20)
-        )
-          continue;
-
-        const hexP = hslToHex(A.h, A.s, A.l);
-        const hexS = hslToHex(B.h, B.s, B.l);
-        const hexT = hslToHex(C.h, C.s, C.l);
-
-        const ps = contrastRatio(hexP, hexS);
-        const st = contrastRatio(hexS, hexT);
-        const pt = contrastRatio(hexP, hexT);
-        if (ps < 3.0 || st < 3.0 || pt < 3.0) continue;
-
-        next.primary = hexP;
-        next.secondary = hexS;
-        next.tertiary = hexT;
-        return api.set(next, opts);
-      }
-
-      // úplně poslední nouze: čistý HSL random (3 barevné, bez garancí)
-      const next = { ...state };
-      next.primary = hslToHex(Math.random() * 360, randInRange(satRange), randInRange(lightRange));
-      next.secondary = hslToHex(Math.random() * 360, randInRange(satRange), randInRange(lightRange));
-      next.tertiary = hslToHex(Math.random() * 360, randInRange(satRange), randInRange(lightRange));
-      return api.set(next, opts);
-    },
-	
-	// Vygeneruje JEDNU barvu tak, aby byla čitelná proti oběma zbylým barvám.
-// Použití: colors.randomizeOneSafe("primary", { min: 4.5 })
-randomizeOneSafe(which = "primary", opts = {}) {
-  const cur = api.get();
-
-  const key = String(which);
-  if (key !== "primary" && key !== "secondary" && key !== "tertiary") {
-    return cur;
-  }
-
-  const min = typeof opts.min === "number" ? opts.min : 3.0;
-  const tries = typeof opts.tries === "number" ? opts.tries : 1200;
-
-  // cílová barva má projít proti oběma ostatním
-  const againstA = key === "primary" ? cur.secondary : cur.primary;
-  const againstB = key === "tertiary" ? cur.secondary : cur.tertiary;
-
-  // využijeme stejný "look" jako randomize: HSL v satRange/lightRange
-  // ale dovolíme lokálně přebít rozsahy:
-  const satR = Array.isArray(opts.satRange) ? opts.satRange : [0.65, 1.0];
-  const lightR = Array.isArray(opts.lightRange) ? opts.lightRange : [0.25, 0.85];
-
-  function randInRangeLocal([a, b]) {
-    return a + Math.random() * (b - a);
-  }
-
-  let picked = null;
-
-  const minSteps = [
-    min,
-    Math.min(min, 4.5),
-    Math.min(min, 3.0),
-    Math.min(min, 2.0),
-  ];
-
-  const ranges = [
-    { sat: satR, light: lightR },
-    {
-      sat: [Math.max(0, satR[0] - 0.1), Math.min(1, satR[1] + 0.1)],
-      light: [0.10, 0.93],
-    },
-    {
-      sat: [0.35, 1.0],
-      light: [0.05, 0.97],
-    },
-  ];
-
-  for (const minTry of minSteps) {
-    for (const rg of ranges) {
-      for (let i = 0; i < tries; i++) {
-        const cand = hslToHex(
-          Math.random() * 360,
-          randInRangeLocal(rg.sat),
-          randInRangeLocal(rg.light)
-        );
-
-        if (
-          contrastRatio(cand, againstA) >= minTry &&
-          contrastRatio(cand, againstB) >= minTry
-        ) {
-          picked = cand;
-          break;
-        }
-      }
-      if (picked) break;
-    }
-    if (picked) break;
-  }
-
-  if (!picked) return cur;
-
-  return api.set({ [key]: picked }, opts);
-
-},
-
 
     // rotate(1): [p,s,t] -> [t,p,s]
     rotate(steps = 1, opts = {}) {
@@ -534,6 +281,27 @@ randomizeOneSafe(which = "primary", opts = {}) {
       }
 
       return api.set(next, opts);
+    },
+
+    // Jediná funkce pro generování barev (bez kontrastů) – HSL random
+    randomizeOne(which = "primary", opts = {}) {
+      const key = String(which);
+      if (key !== "primary" && key !== "secondary" && key !== "tertiary") {
+        return api.get();
+      }
+
+      const satRange = Array.isArray(opts.satRange) ? opts.satRange : [0.65, 1.0];
+      const lightRange = Array.isArray(opts.lightRange) ? opts.lightRange : [0.25, 0.85];
+
+      const randInRange = ([a, b]) => a + Math.random() * (b - a);
+
+      const hex = hslToHex(
+        Math.random() * 360,
+        randInRange(satRange),
+        randInRange(lightRange)
+      );
+
+      return api.set({ [key]: hex }, opts);
     },
   };
 
@@ -691,7 +459,7 @@ function clamp255(x) {
 }
 
 /* =======================
-   HSL + kontrast helpery
+   HSL helpery
    ======================= */
 
 function hslToRgb(h, s, l) {
@@ -725,29 +493,8 @@ function hslToHex(h, s, l) {
   return rgbToHex(hslToRgb(h, s, l));
 }
 
-function relLuminance({ r, g, b }) {
-  const srgb = [r, g, b]
-    .map((v) => v / 255)
-    .map((c) =>
-      c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
-    );
-  return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
-}
-
-function contrastRatio(hexA, hexB) {
-  const a = relLuminance(hexToRgb(hexA));
-  const b = relLuminance(hexToRgb(hexB));
-  const L1 = Math.max(a, b);
-  const L2 = Math.min(a, b);
-  return (L1 + 0.05) / (L2 + 0.05);
-}
-
 /* =======================
    GLOBAL DISTURBER (rušič)
-   - fixed SVG přes celý viewport
-   - tvar se nehýbe; pohyb dělají jen 4 body polygonu
-   - lineární (bez ease)
-   - pattern: transparent bg, tečky = secondaryColor
    ======================= */
 
 function startGlobalDisturber() {
