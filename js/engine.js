@@ -21,7 +21,7 @@ const LS_COLORS = "laborator_colors_v1";
 
 // Default barvy projektu
 const DEFAULT_COLORS = {
-  primary: "#5fffbf",
+  primary: "#00ff91",
   secondary: "#000000",
   tertiary: "#ffffff",
 };

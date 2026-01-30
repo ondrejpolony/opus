@@ -40,7 +40,7 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
 
   root.innerHTML = `
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Rubik+Burned&family=Rubik+Glitch&family=Rubik+Dirt&family=Share+Tech+Mono&family=IBM+Plex+Mono:wght@400;700&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Rubik+Burned&family=Rubik+Glitch&family=Rubik+Dirt&family=Share+Tech+Mono&family=IBM+Plex+Mono&display=swap');
 
       #m02{
         width: 100%;
@@ -51,7 +51,7 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
 
       #m02 .wrap{
         display: flex;
-        align-items: flex-start; /* důležité: zarovnáme horní hranu */
+        align-items: flex-start;
         gap: 0;
       }
 
@@ -78,7 +78,7 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
         user-select: none;
         border: none;
 
-        color: var(--secondaryColor);
+        color: var(--primaryColor);
         font-size: calc((80vmin / ${ROWS}) * 0.62);
         line-height: 1;
 
@@ -87,7 +87,7 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
       }
 
       #m02 #m02_grid td.is-e{
-        background: var(--primaryColor);
+        background: var(--secondaryColor);
         cursor: pointer;
       }
 
@@ -116,17 +116,135 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
       }
 
       #m02 #m02_side td{
-        width: calc(80vmin / ${SIDE_ROWS});   /* čtverce */
-        height: calc(80vmin / ${SIDE_ROWS});  /* čtverce */
+        width: calc(80vmin / ${SIDE_ROWS});
+        height: calc(80vmin / ${SIDE_ROWS});
         border: none;
         padding: 0;
         background: transparent;
+
+        /* vybarvování má plynout */
+        transition: background 500ms cubic-bezier(.2,.8,.2,1);
       }
 
       /* linky mezi řádky v pravém sloupci */
       #m02 #m02_side tr + tr td{
-        border-top: 1px solid var(--secondaryColor);
+        border-top: 1px solid var(--primaryColor);
       }
+
+      /* sloupec plný -> zdivočelý shake */
+      #m02 #m02_side.is-full{
+        animation: m02_side_shake 0.18s infinite;
+        transform-origin: center;
+      }
+      @keyframes m02_side_shake{
+        0%{transform:translate(0,0) rotate(0deg)}
+        10%{transform:translate(-2px,1px) rotate(-1deg)}
+        20%{transform:translate(2px,-1px) rotate(1deg)}
+        30%{transform:translate(-3px,2px) rotate(-1.2deg)}
+        40%{transform:translate(3px,-2px) rotate(1.2deg)}
+        50%{transform:translate(-2px,-2px) rotate(-0.8deg)}
+        60%{transform:translate(2px,2px) rotate(0.8deg)}
+        70%{transform:translate(-3px,1px) rotate(-1deg)}
+        80%{transform:translate(3px,-1px) rotate(1deg)}
+        90%{transform:translate(-1px,2px) rotate(-0.6deg)}
+        100%{transform:translate(0,0) rotate(0deg)}
+      }
+
+      /* aktivní (nejhořejší vyplněný) bliká jemně */
+      #m02 #m02_side td.is-top{
+        will-change: background;
+        animation: m02_side_blink 380ms ease-in-out infinite;
+      }
+      @keyframes m02_side_blink{
+        0%, 100% { background: var(--secondaryColor); }
+        50% {
+          background: color-mix(in srgb, var(--primaryColor) 75%, transparent);
+        }
+      }
+
+      /* ===== TOAST UI (globální) ===== */
+      .m02-toast{
+        position: fixed;
+        left: 50%;
+        top: 45%;
+        transform: translate(-50%, -50%) scale(0.92);
+        opacity: 0;
+        z-index: 10000000;
+        pointer-events: none;
+
+        transition:
+          opacity 300ms ease,
+          transform 300ms cubic-bezier(.2,.8,.2,1);
+      }
+
+      .m02-toast.is-visible{
+  opacity: 1;
+  animation: m02_toast_bounce 420ms cubic-bezier(.2,.8,.2,1);
+}
+
+
+      .m02-toast.is-leaving{
+        opacity: 0;
+        transform: translate(-50%, -60%) scale(0.96);
+      }
+
+      .m02-toast .toast-inner{
+        padding: 22px 28px;
+        border-radius: 18px;
+
+        /* vyplněné pozadí */
+        background: var(--secondaryColor);
+        color: var(--primaryColor);
+
+        /* dvojitý outline + “UI depth” */
+        box-shadow:
+          0 0 0 2px var(--primaryColor),
+          0 0 0 6px var(--secondaryColor),
+          0 16px 40px rgba(0,0,0,0.35);
+      }
+
+      .m02-toast .toast-title{
+        font-family: var(--toast-font, monospace);
+        font-weight: 700;
+        font-style: normal; /* 🔧 první řádek NE italic */
+        font-size: 40px;
+        letter-spacing: 0.02em;
+        text-align: center;
+
+        text-shadow:
+          0 2px 0 rgba(0,0,0,0.6),
+          0 6px 12px rgba(0,0,0,0.4);
+      }
+
+      .m02-toast .toast-sub{
+        margin-top: 6px;
+        font-family: 'TT Autonomous Mono', var(--toast-font, monospace);
+        font-weight: 400;
+        font-style: italic;
+        font-size: 18px;
+        opacity: 0.88;
+        text-align: center;
+
+        text-shadow:
+          0 1px 0 rgba(0,0,0,0.55);
+      }
+	  
+	  @keyframes m02_toast_bounce{
+  0% {
+    transform: translate(-50%, -50%) scale(0.85);
+  }
+  60% {
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+  80% {
+    transform: translate(-50%, -50%) scale(0.98);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+	  
     </style>
 
     <div id="m02">
@@ -156,38 +274,166 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
   const disabled = new Set(); // "r,c"
   const keyOf = (r, c) => `${r},${c}`;
 
-  /* =========================
-     RIGHT COLUMN (15×1)
-     - plní se odspodu
-     - při plném a dalším É: reset na 0 a začni znovu
-     - klikatelný je jen nejhořejší vyplněný čtverec
-     - klik na něj: rotate + odbarví (sideFilled--)
-     ========================= */
+  // ===== TOAST MESSAGES =====
+  const MESSAGE_FONTS = [...FONTS];
 
+  const MESSAGES = [
+    { title: "KA–BOOM!!!", sub: "system destabi lizeddestabi lizeddest abilizeddestabilized" },
+    { title: "WARNING", sub: "feedback loop detected" },
+    { title: "ERROR", sub: "symbol overflow" },
+    { title: "SYNC", sub: "re-calibrating grid" },
+    { title: "GLITCH", sub: "noise injected" },
+    { title: "PING", sub: "state updated" },
+    { title: "ALERT", sub: "unusual pattern found" },
+    { title: "TRACE", sub: "path extended" },
+    { title: "OK", sub: "carry on" },
+  ];
+
+  let toastEl = null;
+  const toastTimers = new Set();
+
+  function clearToastTimers() {
+    for (const id of toastTimers) window.clearTimeout(id);
+    toastTimers.clear();
+  }
+
+  function randomMessageFont() {
+    return MESSAGE_FONTS[Math.floor(Math.random() * MESSAGE_FONTS.length)];
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function showMessage({ title, subtitle, fontFamily, duration = 3000 }) {
+    if (toastEl && toastEl.isConnected) toastEl.remove();
+
+    const el = document.createElement("div");
+    el.className = "m02-toast";
+    el.style.setProperty("--toast-font", fontFamily || "monospace");
+
+    el.innerHTML = `
+      <div class="toast-inner">
+        <div class="toast-title">${escapeHtml(title || "")}</div>
+        <div class="toast-sub">${escapeHtml(subtitle || "")}</div>
+      </div>
+    `;
+
+    document.body.appendChild(el);
+    toastEl = el;
+
+    // entry
+    requestAnimationFrame(() => el.classList.add("is-visible"));
+
+    // exit
+    const t1 = window.setTimeout(() => {
+      if (!el.isConnected) return;
+      el.classList.remove("is-visible");
+      el.classList.add("is-leaving");
+    }, duration);
+    toastTimers.add(t1);
+
+    const t2 = window.setTimeout(() => {
+      if (el.isConnected) el.remove();
+      if (toastEl === el) toastEl = null;
+    }, duration + 520);
+    toastTimers.add(t2);
+  }
+
+  function showMessageForCount(n) {
+    // n = nová hodnota sideFilled (1..SIDE_ROWS)
+    const pick = MESSAGES[(n - 1) % MESSAGES.length];
+    showMessage({
+      title: pick.title,
+      subtitle: pick.sub,
+      fontFamily: randomMessageFont(),
+      duration: 2000,
+    });
+  }
+
+  // ===== RIGHT COLUMN STATE =====
   const sideCells = new Array(SIDE_ROWS);
   let sideFilled = 0; // 0..SIDE_ROWS
 
+  // reset animace
+  let isResettingSide = false;
+  const RESET_STEP_MS = 60;
+  const resetTimers = new Set();
+
+  function clearResetTimers() {
+    for (const id of resetTimers) window.clearTimeout(id);
+    resetTimers.clear();
+  }
+
+  function animateResetSideTopToBottom() {
+    if (isResettingSide) return;
+    isResettingSide = true;
+
+    // okamžitě zruš shake
+    sideTable.classList.remove("is-full");
+
+    // během resetu nic neklikat a žádné blikání
+    for (const td of sideCells) {
+      if (!td) continue;
+      td.classList.remove("is-top");
+      td.style.pointerEvents = "none";
+      td.style.cursor = "default";
+      td.dataset.active = "0";
+    }
+
+    clearResetTimers();
+
+    // odbarvuj shora dolů (0 -> 14)
+    for (let i = 0; i < SIDE_ROWS; i++) {
+      const id = window.setTimeout(() => {
+        const td = sideCells[i];
+        if (!td) return;
+        td.style.background = "transparent";
+        td.dataset.filled = "0";
+      }, i * RESET_STEP_MS);
+      resetTimers.add(id);
+    }
+
+    // po doběhnutí nastav stav = 0 a překresli
+    const doneId = window.setTimeout(() => {
+      sideFilled = 0;
+      isResettingSide = false;
+      renderSide();
+    }, SIDE_ROWS * RESET_STEP_MS + 40);
+
+    resetTimers.add(doneId);
+  }
+
   function renderSide() {
-    // vyplňujeme odspodu nahoru
+    const isFull = sideFilled >= SIDE_ROWS;
+    sideTable.classList.toggle("is-full", isFull);
+
+    // nejhořejší vyplněný index (0..14), nebo -1
+    const topIndex = sideFilled > 0 ? SIDE_ROWS - sideFilled : -1;
+
+    // jen pokud sloupec NENÍ plný
+    const allowTopInteraction = topIndex !== -1 && !isFull;
+
     for (let i = 0; i < SIDE_ROWS; i++) {
       const td = sideCells[i];
       if (!td) continue;
 
-      const shouldBeOn = i >= (SIDE_ROWS - sideFilled);
+      const shouldBeOn = i >= SIDE_ROWS - sideFilled;
       td.style.background = shouldBeOn ? "var(--primaryColor)" : "transparent";
       td.dataset.filled = shouldBeOn ? "1" : "0";
 
-      // defaultně neklikatelný (aktivní nastavíme níž)
+      td.classList.remove("is-top");
       td.dataset.active = "0";
       td.style.pointerEvents = "none";
       td.style.cursor = "default";
-    }
 
-    // jen "nejhořejší vyplněný" je aktivní
-    if (sideFilled > 0) {
-      const topIndex = SIDE_ROWS - sideFilled; // nejvyšší vyplněný
-      const td = sideCells[topIndex];
-      if (td) {
+      if (allowTopInteraction && i === topIndex) {
+        td.classList.add("is-top");
         td.dataset.active = "1";
         td.style.pointerEvents = "auto";
         td.style.cursor = "pointer";
@@ -196,19 +442,22 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
   }
 
   function advanceSideByOne() {
-    // když je plno a přijde další É -> reset na 0 a po tomto kliknutí bude 1
-    if (sideFilled >= SIDE_ROWS) sideFilled = 0;
+    if (isResettingSide) return;
+
+    // když je plno a přijde další É -> animovaný reset do 0 (NE na 1)
+    if (sideFilled >= SIDE_ROWS) {
+      animateResetSideTopToBottom();
+      return;
+    }
+
     sideFilled = Math.min(SIDE_ROWS, sideFilled + 1);
     renderSide();
+
+    // 🔥 po každém přibývajícím čtverci hláška (pracovně 3000ms)
+    showMessageForCount(sideFilled);
   }
 
-  function popTopSideCell() {
-    if (sideFilled <= 0) return;
-    sideFilled = Math.max(0, sideFilled - 1);
-    renderSide();
-  }
-
-  // polyline path (jen nad levým gridem)
+  // ===== polyline path (jen nad levým gridem) =====
   const ePathCells = [];
   let polyline = null;
 
@@ -216,7 +465,7 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
     if (polyline) return;
     polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
     polyline.setAttribute("fill", "none");
-    polyline.setAttribute("stroke", "var(--primaryColor)"); // linka = primary
+    polyline.setAttribute("stroke", "var(--secondaryColor)");
     polyline.setAttribute("stroke-width", "2");
     polyline.setAttribute("stroke-linecap", "round");
     polyline.setAttribute("stroke-linejoin", "round");
@@ -235,8 +484,8 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
     if (!td) return null;
     const tdRect = td.getBoundingClientRect();
     return {
-      x: (tdRect.left - tableRect.left) + tdRect.width / 2,
-      y: (tdRect.top - tableRect.top) + tdRect.height / 2,
+      x: tdRect.left - tableRect.left + tdRect.width / 2,
+      y: tdRect.top - tableRect.top + tdRect.height / 2,
     };
   }
 
@@ -332,7 +581,7 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
       if (disabled.has(kk)) continue;
 
       const td = table.rows[r].cells[c];
-      if (Math.random() < (0.3 + 0.7 * progress)) td.style.fontFamily = randomFont();
+      if (Math.random() < 0.3 + 0.7 * progress) td.style.fontFamily = randomFont();
 
       const isShaking = td.classList.contains("shake");
 
@@ -344,14 +593,10 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
 
       if (!isShaking) td.style.transform = `translate(${dx}px, ${dy}px) rotate(${rot}deg) scale(${sc})`;
 
-      const ls = Math.random() < (0.2 + 0.6 * progress)
-        ? (Math.random() - 0.5) * progress * 0.5
-        : 0;
+      const ls = Math.random() < 0.2 + 0.6 * progress ? (Math.random() - 0.5) * progress * 0.5 : 0;
       td.style.letterSpacing = `${ls}em`;
 
-      const blur = Math.random() < (0.15 + 0.55 * progress)
-        ? Math.random() * progress * 1.5
-        : 0;
+      const blur = Math.random() < 0.15 + 0.55 * progress ? Math.random() * progress * 1.5 : 0;
 
       const contrast = 1 + (Math.random() - 0.5) * progress * 0.8;
       const saturate = 1 + (Math.random() - 0.5) * progress * 1.2;
@@ -393,11 +638,13 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
           td.style.letterSpacing = "";
           td.style.transform = "";
 
-          // 1) vybarvi další buňku v pravém sloupci (odspodu) / nebo reset když je plno
+          // 1) pravý sloupec – přidat / reset s animací (když byl plný)
           advanceSideByOne();
 
-          // 2) náhodná změna primaryColor (správné API z engine.js)
-          colors?.randomizeOne?.("primary", { duration: 500 });
+          // 2) náhodná změna primaryColor (správné API: randomizeOne)
+          if (!isResettingSide) {
+            colors?.randomizeOne?.("primary", { duration: 500 });
+          }
         },
         { signal }
       );
@@ -411,25 +658,25 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
   for (let r = 0; r < SIDE_ROWS; r++) {
     const tr = document.createElement("tr");
     const td = document.createElement("td");
+    tr.appendChild(td);
+    sideTable.appendChild(tr);
+    sideCells[r] = td;
 
     td.addEventListener(
       "click",
       () => {
-        // jen aktivní (nejhořejší vyplněný)
+        if (isResettingSide) return;
         if (td.dataset.active !== "1") return;
 
         colors?.rotate?.(1, { duration: 500 });
-        popTopSideCell();
+
+        sideFilled = Math.max(0, sideFilled - 1);
+        renderSide();
       },
       { signal }
     );
-
-    tr.appendChild(td);
-    sideTable.appendChild(tr);
-    sideCells[r] = td;
   }
 
-  // initial render
   renderSide();
 
   syncOverlaySize();
@@ -442,6 +689,10 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
   window.addEventListener("resize", onResize, { signal });
 
   return () => {
+    clearResetTimers();
+    clearToastTimers();
+    if (toastEl && toastEl.isConnected) toastEl.remove();
+
     window.clearInterval(t1);
     window.clearInterval(t2);
     window.removeEventListener("resize", onResize);
