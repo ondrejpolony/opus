@@ -23,10 +23,39 @@ export default function m02({ root, colors, complete }) {
     "'IBM Plex Mono', monospace",
   ];
 
-  const SOURCE_TEXT_RAW = `My, občané České republiky v Čechách, na Moravě a ve Slezsku,
-v čase obnovy samostatného českého státu,
-věrni všem dobrým tradicím dávné státnosti zemí Koruny české i státnosti československé,
-odhodláni budovat, chránit a rozvíjet Českou republiku
+  // ===== TOAST / UI MESSAGES =====
+  const TOAST_DURATION = 3000; // ⏱ doba zobrazení jedné hlášky
+  const TOAST_GAP_MS = 120; // krátká mezera mezi hláškami ve frontě
+  const TOAST_FONT_SIZE_1 = 44; // 🔠 první řádek
+  const TOAST_FONT_SIZE_2 = 18; // 🔠 druhý řádek
+
+  // Základní pool (používá se cyklicky)
+  const TOAST_MESSAGES = [
+    ["KA–BOOM!!!", "lov začíná"], // 0 (první vybarvení)
+    ["COMBO", "dobrá trefa" ],
+    ["HATTRICK", "vyplň lištu a odemkni prémiový obsah" ],
+    ["SUPERSHOT", "jen tak dál" ],
+    ["BULLSEYE", "už jen 10 zásahů" ],
+    ["HO HO HO", "dokážeš ulovit své duchovní zvíře?" ],
+    ["MEGASNIPER", "čistá práce" ],
+    ["SURESHOT", "jsi v půli cesty k prémiovému obsahu" ],
+    ["9OK", "carry on" ],
+    ["10WARNING", "" ],
+    ["11ERROR", "po odemčení prémiového obsahu poznáš své duchovní zvíře" ],
+    ["12SYNC", "myslíš, že jsi hoden?" ],
+    ["13GLITCH", "cíl se blíží, nepolevuj" ],
+    ["14PING", "jsi připraven?" ],
+  ];
+
+  // Speciální hlášky
+  const TOAST_FULL_RESET = ["OOOPS", "minul jsi"]; // klik na É při plném sloupci
+  const TOAST_15_A = ["PRÉMIOVÝ OBSAH ODEMČEN", "duchovní zvíře bylo vypuštěno"]; // 15. čtverec – hláška 1
+  const TOAST_15_B = ["LET´S HUNT", " "]; // 15. čtverec – hláška 2
+
+  const SOURCE_TEXT_RAW = `My, občané České repuéblikyé év Čéééeécééhách, naéé Moravě a ve Slezsku,
+v čase obnovy samostatného českého státu,éé
+věrni všem dobrým tradicím dávné státnosti éézemí Koruny české i státnosti československé,
+odhodláni budovat, chránit a rozvíjet Českou ééérepubliku
 v duchu nedotknutelných hodnot lidské důstojnosti a svobody
 jako vlast rovnoprávných, svobodných občanů,
 kteří jsou si vědomi svých povinností vůči druhým a zodpovědnosti vůči celku,
@@ -47,6 +76,7 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
         height: 100%;
         display: grid;
         place-items: center;
+        position: relative;
       }
 
       #m02 .wrap{
@@ -122,16 +152,13 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
         padding: 0;
         background: transparent;
 
-        /* vybarvování má plynout */
         transition: background 500ms cubic-bezier(.2,.8,.2,1);
       }
 
-      /* linky mezi řádky v pravém sloupci */
       #m02 #m02_side tr + tr td{
         border-top: 1px solid var(--primaryColor);
       }
 
-      /* sloupec plný -> zdivočelý shake */
       #m02 #m02_side.is-full{
         animation: m02_side_shake 0.18s infinite;
         transform-origin: center;
@@ -150,7 +177,6 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
         100%{transform:translate(0,0) rotate(0deg)}
       }
 
-      /* aktivní (nejhořejší vyplněný) bliká jemně */
       #m02 #m02_side td.is-top{
         will-change: background;
         animation: m02_side_blink 380ms ease-in-out infinite;
@@ -162,89 +188,78 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
         }
       }
 
-      /* ===== TOAST UI (globální) ===== */
-      .m02-toast{
+      /* =========================
+         TOAST / UI HLÁŠKY
+      ========================= */
+      #m02_toast{
         position: fixed;
         left: 50%;
-        top: 45%;
-        transform: translate(-50%, -50%) scale(0.92);
-        opacity: 0;
-        z-index: 10000000;
+        top: 50%;
+        transform: translate3d(-50%, -50%, 0);
+        z-index: 99999;
         pointer-events: none;
-
-        transition:
-          opacity 300ms ease,
-          transform 300ms cubic-bezier(.2,.8,.2,1);
-      }
-
-      .m02-toast.is-visible{
-  opacity: 1;
-  animation: m02_toast_bounce 420ms cubic-bezier(.2,.8,.2,1);
-}
-
-
-      .m02-toast.is-leaving{
         opacity: 0;
-        transform: translate(-50%, -60%) scale(0.96);
+        transition: opacity 180ms ease;
+      }
+      #m02_toast.is-visible{
+        opacity: 1;
       }
 
-      .m02-toast .toast-inner{
+      #m02_toast .toast-inner{
         padding: 22px 28px;
         border-radius: 18px;
 
-        /* vyplněné pozadí */
         background: var(--secondaryColor);
-        color: var(--primaryColor);
 
-        /* dvojitý outline + “UI depth” */
+        border: 2px solid var(--primaryColor);
+        outline: 2px solid var(--primaryColor);
+        outline-offset: 3px;
+
+        transform: scale(0.92);
+        will-change: transform;
+        backface-visibility: hidden;
+
         box-shadow:
-          0 0 0 2px var(--primaryColor),
-          0 0 0 6px var(--secondaryColor),
-          0 16px 40px rgba(0,0,0,0.35);
+          0 20px 50px rgba(0,0,0,.35),
+          inset 0 0 0 1px rgba(255,255,255,.05);
       }
 
-      .m02-toast .toast-title{
-        font-family: var(--toast-font, monospace);
-        font-weight: 700;
-        font-style: normal; /* 🔧 první řádek NE italic */
-        font-size: 40px;
-        letter-spacing: 0.02em;
+      #m02_toast.is-visible .toast-inner{
+        animation: m02_toast_bounce 420ms cubic-bezier(.2,.8,.2,1);
+      }
+
+      @keyframes m02_toast_bounce{
+        0%   { transform: scale(0.92); }
+        60%  { transform: scale(1.06); }
+        80%  { transform: scale(0.985); }
+        100% { transform: scale(1); }
+      }
+
+      #m02_toast h1{
+        margin: 0;
+        padding: 0;
+        font-size: ${TOAST_FONT_SIZE_1}px;
+        line-height: 1;
+        color: var(--primaryColor);
         text-align: center;
-
+        font-style: normal;
         text-shadow:
-          0 2px 0 rgba(0,0,0,0.6),
-          0 6px 12px rgba(0,0,0,0.4);
+          0 2px 6px rgba(0,0,0,.45),
+          0 0 12px rgba(0,0,0,.25);
       }
 
-      .m02-toast .toast-sub{
-        margin-top: 6px;
-        font-family: 'TT Autonomous Mono', var(--toast-font, monospace);
-        font-weight: 400;
+      #m02_toast p{
+        margin: 6px 0 0;
+        padding: 0;
+        font-size: ${TOAST_FONT_SIZE_2}px;
+        color: var(--primaryColor);
+        opacity: .85;
+        text-align: center;
         font-style: italic;
-        font-size: 18px;
-        opacity: 0.88;
-        text-align: center;
-
+        letter-spacing: .02em;
         text-shadow:
-          0 1px 0 rgba(0,0,0,0.55);
+          0 1px 4px rgba(0,0,0,.4);
       }
-	  
-	  @keyframes m02_toast_bounce{
-  0% {
-    transform: translate(-50%, -50%) scale(0.85);
-  }
-  60% {
-    transform: translate(-50%, -50%) scale(1.05);
-  }
-  80% {
-    transform: translate(-50%, -50%) scale(0.98);
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-  }
-}
-
-	  
     </style>
 
     <div id="m02">
@@ -256,13 +271,26 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
 
         <table id="m02_side" aria-label="Side column"></table>
       </div>
+
+      <div id="m02_toast" aria-live="polite">
+        <div class="toast-inner">
+          <h1></h1>
+          <p></p>
+        </div>
+      </div>
     </div>
   `;
 
   const table = root.querySelector("#m02_grid");
   const overlay = root.querySelector("#m02_overlay");
   const sideTable = root.querySelector("#m02_side");
-  if (!table || !overlay || !sideTable) return () => ac.abort();
+  const toastEl = root.querySelector("#m02_toast");
+  const toastH1 = toastEl?.querySelector("h1");
+  const toastP = toastEl?.querySelector("p");
+
+  if (!table || !overlay || !sideTable || !toastEl || !toastH1 || !toastP) {
+    return () => ac.abort();
+  }
 
   // random start cell in 10×10 grid
   let cellIdx = Math.floor(Math.random() * (ROWS * COLS));
@@ -274,86 +302,66 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
   const disabled = new Set(); // "r,c"
   const keyOf = (r, c) => `${r},${c}`;
 
-  // ===== TOAST MESSAGES =====
-  const MESSAGE_FONTS = [...FONTS];
+  // ===== TOAST QUEUE =====
+  let toastTimer = null;
+  let toastGapTimer = null;
+  let toastIsShowing = false;
+  const toastQueue = []; // { title, sub, duration }
 
-  const MESSAGES = [
-    { title: "KA–BOOM!!!", sub: "system destabi lizeddestabi lizeddest abilizeddestabilized" },
-    { title: "WARNING", sub: "feedback loop detected" },
-    { title: "ERROR", sub: "symbol overflow" },
-    { title: "SYNC", sub: "re-calibrating grid" },
-    { title: "GLITCH", sub: "noise injected" },
-    { title: "PING", sub: "state updated" },
-    { title: "ALERT", sub: "unusual pattern found" },
-    { title: "TRACE", sub: "path extended" },
-    { title: "OK", sub: "carry on" },
-  ];
-
-  let toastEl = null;
-  const toastTimers = new Set();
-
-  function clearToastTimers() {
-    for (const id of toastTimers) window.clearTimeout(id);
-    toastTimers.clear();
+  function pickFirstLineFont() {
+    return FONTS[Math.floor(Math.random() * FONTS.length)];
   }
 
-  function randomMessageFont() {
-    return MESSAGE_FONTS[Math.floor(Math.random() * MESSAGE_FONTS.length)];
+  function applyToastContent(title, sub) {
+    toastH1.textContent = title;
+    toastP.textContent = sub;
+
+    // první řádek náhodně jedním fontem z tabulky
+    toastH1.style.fontFamily = pickFirstLineFont();
+    // druhý řádek konzistentní
+    toastP.style.fontFamily = "'IBM Plex Mono', monospace";
   }
 
-  function escapeHtml(s) {
-    return String(s)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+  function runNextToastFromQueue() {
+    if (toastIsShowing) return;
+    const next = toastQueue.shift();
+    if (!next) return;
+
+    toastIsShowing = true;
+    applyToastContent(next.title, next.sub);
+    toastEl.classList.add("is-visible");
+
+    if (toastTimer) window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => {
+      toastEl.classList.remove("is-visible");
+
+      if (toastGapTimer) window.clearTimeout(toastGapTimer);
+      toastGapTimer = window.setTimeout(() => {
+        toastIsShowing = false;
+        runNextToastFromQueue();
+      }, TOAST_GAP_MS);
+    }, next.duration);
   }
 
-  function showMessage({ title, subtitle, fontFamily, duration = 3000 }) {
-    if (toastEl && toastEl.isConnected) toastEl.remove();
-
-    const el = document.createElement("div");
-    el.className = "m02-toast";
-    el.style.setProperty("--toast-font", fontFamily || "monospace");
-
-    el.innerHTML = `
-      <div class="toast-inner">
-        <div class="toast-title">${escapeHtml(title || "")}</div>
-        <div class="toast-sub">${escapeHtml(subtitle || "")}</div>
-      </div>
-    `;
-
-    document.body.appendChild(el);
-    toastEl = el;
-
-    // entry
-    requestAnimationFrame(() => el.classList.add("is-visible"));
-
-    // exit
-    const t1 = window.setTimeout(() => {
-      if (!el.isConnected) return;
-      el.classList.remove("is-visible");
-      el.classList.add("is-leaving");
-    }, duration);
-    toastTimers.add(t1);
-
-    const t2 = window.setTimeout(() => {
-      if (el.isConnected) el.remove();
-      if (toastEl === el) toastEl = null;
-    }, duration + 520);
-    toastTimers.add(t2);
+  function enqueueToast(title, sub, duration = TOAST_DURATION) {
+    toastQueue.push({ title, sub, duration });
+    runNextToastFromQueue();
   }
 
-  function showMessageForCount(n) {
-    // n = nová hodnota sideFilled (1..SIDE_ROWS)
-    const pick = MESSAGES[(n - 1) % MESSAGES.length];
-    showMessage({
-      title: pick.title,
-      subtitle: pick.sub,
-      fontFamily: randomMessageFont(),
-      duration: 2000,
-    });
+  function enqueueToastFromPoolByCount(count) {
+    // count = 1..15 (po přidání)
+    if (count === 1) {
+      // první vybarvení = Ka–boom (pevně)
+      const m = TOAST_MESSAGES[0];
+      enqueueToast(m[0], m[1]);
+      return;
+    }
+
+    // pro ostatní si vezmeme cyklicky z poolu (kromě [0])
+    const pool = TOAST_MESSAGES.slice(1);
+    const idx = (count - 2) % pool.length;
+    const m = pool[idx];
+    enqueueToast(m[0], m[1]);
   }
 
   // ===== RIGHT COLUMN STATE =====
@@ -444,17 +452,32 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
   function advanceSideByOne() {
     if (isResettingSide) return;
 
-    // když je plno a přijde další É -> animovaný reset do 0 (NE na 1)
+    // když je plno a přijde další É:
+    // 1) ukázat speciální hlášku
+    // 2) pak reset animace
     if (sideFilled >= SIDE_ROWS) {
+      enqueueToast(TOAST_FULL_RESET[0], TOAST_FULL_RESET[1]);
       animateResetSideTopToBottom();
       return;
     }
 
+    const prev = sideFilled;
     sideFilled = Math.min(SIDE_ROWS, sideFilled + 1);
     renderSide();
 
-    // 🔥 po každém přibývajícím čtverci hláška (pracovně 3000ms)
-    showMessageForCount(sideFilled);
+    const now = sideFilled;
+
+    // 🔧 ÚPRAVA:
+    // když právě doplňujeme 15. čtverec (poslední É před zaplněním),
+    // nepouštěj "normální" hlášku z poolu — rovnou jen speciální dvě.
+    if (prev === SIDE_ROWS - 1 && now === SIDE_ROWS) {
+      enqueueToast(TOAST_15_A[0], TOAST_15_A[1]);
+      enqueueToast(TOAST_15_B[0], TOAST_15_B[1]);
+      return;
+    }
+
+    // jinak standardní hláška po přidání čtverce
+    enqueueToastFromPoolByCount(now);
   }
 
   // ===== polyline path (jen nad levým gridem) =====
@@ -591,7 +614,9 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
       const dy = (Math.random() - 0.5) * 2 * amp;
       const sc = 1 + (Math.random() - 0.5) * (progress * 0.10);
 
-      if (!isShaking) td.style.transform = `translate(${dx}px, ${dy}px) rotate(${rot}deg) scale(${sc})`;
+      if (!isShaking) {
+        td.style.transform = `translate(${dx}px, ${dy}px) rotate(${rot}deg) scale(${sc})`;
+      }
 
       const ls = Math.random() < 0.2 + 0.6 * progress ? (Math.random() - 0.5) * progress * 0.5 : 0;
       td.style.letterSpacing = `${ls}em`;
@@ -690,9 +715,8 @@ prostřednictvím svých svobodně zvolených zástupců přijímáme tuto Ústa
 
   return () => {
     clearResetTimers();
-    clearToastTimers();
-    if (toastEl && toastEl.isConnected) toastEl.remove();
-
+    if (toastTimer) window.clearTimeout(toastTimer);
+    if (toastGapTimer) window.clearTimeout(toastGapTimer);
     window.clearInterval(t1);
     window.clearInterval(t2);
     window.removeEventListener("resize", onResize);
