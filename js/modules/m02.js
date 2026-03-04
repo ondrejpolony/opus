@@ -52,10 +52,10 @@ export default function m02({ root, colors, complete }) {
   const TOAST_15_A = ["PRÉMIOVÝ OBSAH ODEMČEN", "duchovní zvíře bylo vypuštěno"]; // 15. čtverec – hláška 1
   const TOAST_15_B = ["LET´S HUNT", " "]; // 15. čtverec – hláška 2
 
-  const SOURCE_TEXT_RAW = `My, občané České repuéblikyé év Čéééeécééhách, naéé Moravě a ve Slezsku,
-v čase obnovy samostatného českého státu,éé
-věrni všem dobrým tradicím dávné státnosti éézemí Koruny české i státnosti československé,
-odhodláni budovat, chránit a rozvíjet Českou ééérepubliku
+  const SOURCE_TEXT_RAW = `My, občané České republiky v Čechách, na Moravě a ve Slezsku,
+v čase obnovy samostatného českého státu,
+věrni všem dobrým tradicím dávné státnosti zemí Koruny české i státnosti československé,
+odhodláni budovat, chránit a rozvíjet Českou republiku
 v duchu nedotknutelných hodnot lidské důstojnosti a svobody
 jako vlast rovnoprávných, svobodných občanů,
 kteří jsou si vědomi svých povinností vůči druhým a zodpovědnosti vůči celku,
